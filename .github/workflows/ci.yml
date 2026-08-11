@@ -10,9 +10,19 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      # A named simulator couples the workflow to whatever devices this month's
+      # runner image ships, and the failure mode is a destination list with no
+      # simulators in it. Asking simctl for any available iPhone keeps the same
+      # test on every image without naming one.
+      - name: Pick an available iPhone simulator
+        id: simulator
+        run: |
+          UDID=$(xcrun simctl list devices available --json \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(dev["udid"] for devs in d.values() for dev in devs if "iPhone" in dev["name"]))')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
       - name: Build and test on an iOS simulator
         run: |
           xcodebuild test \
             -scheme Carillon \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
             -skipPackagePluginValidation
