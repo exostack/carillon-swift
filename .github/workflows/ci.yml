@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # A named simulator couples the workflow to whatever devices this month's
       # runner image ships, and the failure mode is a destination list with no
       # simulators in it. Asking simctl for any available iPhone keeps the same
