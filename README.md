@@ -8,8 +8,14 @@ application and is never part of the published product.
 ## Integrating
 
 ```swift
+// Registers this device. No prompt is shown: a push token is transport
+// addressing, not consent, so the handset is in your base from its first launch
+// carrying the permission it really has.
 Carillon.configure(key: "carillon_mk_live_…", debug: true)
-await Carillon.register()
+
+// A separate decision, made whenever your app has earned the right to ask.
+// The new permission reaches the server on its own.
+await Carillon.requestPermission()   // .allowed | .denied | .provisional
 ```
 
 Then two lines in the app delegate. The SDK swizzles nothing, so everything it

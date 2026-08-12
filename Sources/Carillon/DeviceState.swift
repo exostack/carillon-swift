@@ -55,6 +55,14 @@ struct DeviceState: Equatable, Codable {
   var timezoneId: String?
   var locale: String?
   var appVersion: String?
+  /// `CFBundleVersion` — the build behind the marketing version, which several
+  /// builds share.
+  var appBuild: String?
+  var bundleId: String?
+  /// `UIDevice.current.systemVersion`, verbatim. Never normalised here.
+  var osVersion: String?
+  /// Absent until the app has been able to ask iOS, which is asynchronous.
+  var pushPermission: PushPermission?
   var sdkVersion: String?
   var optedIn: Bool = true
 
@@ -78,6 +86,10 @@ struct DeviceState: Equatable, Codable {
       "timezone_id": timezoneId ?? NSNull(),
       "locale": locale ?? NSNull(),
       "app_version": appVersion ?? NSNull(),
+      "app_build": appBuild ?? NSNull(),
+      "bundle_id": bundleId ?? NSNull(),
+      "os_version": osVersion ?? NSNull(),
+      "push_permission": pushPermission?.rawValue ?? NSNull(),
       "sdk_version": sdkVersion ?? NSNull(),
       "opted_in": optedIn,
     ]
@@ -88,7 +100,9 @@ struct DeviceState: Equatable, Codable {
   /// Compared as the serialised body rather than field by field: the question is
   /// whether another call would tell the server anything new, and the body is
   /// exactly that question. A field added to the table later is covered without
-  /// anyone remembering to extend a comparison.
+  /// anyone remembering to extend a comparison — which is why turning
+  /// notifications off in Settings, or updating iOS, is by itself a reason to
+  /// re-register: the body changes, so the fingerprint does.
   func fingerprint() -> String {
     guard let data = JSON.encode(registrationBody()) else { return UUID().uuidString }
 

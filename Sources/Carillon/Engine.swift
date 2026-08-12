@@ -117,11 +117,33 @@ final class Engine {
     Log.write(verbose, "registration failed: \(message)")
   }
 
-  func refreshDeviceAttributes(timezoneId: String?, locale: String?, appVersion: String?) {
+  func refreshDeviceAttributes(
+    timezoneId: String?,
+    locale: String?,
+    appVersion: String?,
+    appBuild: String?,
+    bundleId: String?
+  ) {
     mutate {
       $0.timezoneId = timezoneId
       $0.locale = locale
       $0.appVersion = appVersion
+      $0.appBuild = appBuild
+      $0.bundleId = bundleId
+    }
+  }
+
+  /// The two facts only a running iOS app can answer, and only asynchronously.
+  ///
+  /// Apart from the rest because the read is: `UIDevice` is main-actor bound and
+  /// notification settings arrive on a continuation, while everything above is
+  /// answered by Foundation on the spot. They land through the same mutation, so
+  /// a permission that has flipped since the last launch changes the body, which
+  /// changes the fingerprint, which is what makes the device register again.
+  func refreshOperatingSystem(osVersion: String?, pushPermission: PushPermission?) {
+    mutate {
+      $0.osVersion = osVersion
+      $0.pushPermission = pushPermission
     }
   }
 
@@ -443,6 +465,10 @@ final class Engine {
         token: state.token,
         deviceId: store.deviceId,
         environment: state.environment.rawValue,
+        bundleId: state.bundleId,
+        appBuild: state.appBuild,
+        osVersion: state.osVersion,
+        pushPermission: state.pushPermission?.rawValue,
         lastRegistrationAt: lastRegistrationAt,
         lastRegistrationResult: lastRegistrationResult,
         queuedEvents: store.events.count

@@ -10,7 +10,9 @@ final class RegistrationTests: XCTestCase {
     let engine = makeEngine(transport: transport)
 
     engine.refreshDeviceAttributes(
-      timezoneId: "Europe/Paris", locale: "fr-FR", appVersion: "1.4.2")
+      timezoneId: "Europe/Paris", locale: "fr-FR", appVersion: "1.4.2", appBuild: "4271",
+      bundleId: "com.example.app")
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .provisional)
     engine.identify("user-42")
     engine.setTags(["plan": "pro", "seats": 5, "beta": true])
     engine.setToken(String(repeating: "ab", count: 32))
@@ -27,6 +29,10 @@ final class RegistrationTests: XCTestCase {
     XCTAssertEqual(body["timezone_id"] as? String, "Europe/Paris")
     XCTAssertEqual(body["locale"] as? String, "fr-FR")
     XCTAssertEqual(body["app_version"] as? String, "1.4.2")
+    XCTAssertEqual(body["app_build"] as? String, "4271")
+    XCTAssertEqual(body["bundle_id"] as? String, "com.example.app")
+    XCTAssertEqual(body["os_version"] as? String, "18.5")
+    XCTAssertEqual(body["push_permission"] as? String, "provisional")
     XCTAssertEqual(body["sdk_version"] as? String, Carillon.sdkVersion)
     XCTAssertEqual(body["opted_in"] as? Bool, true)
 
@@ -34,6 +40,71 @@ final class RegistrationTests: XCTestCase {
     XCTAssertEqual(tags["plan"] as? String, "pro")
     XCTAssertEqual(tags["seats"] as? Int, 5)
     XCTAssertEqual(tags["beta"] as? Bool, true)
+  }
+
+  func testRegistersBeforeAnybodyHasBeenAsked() async {
+    // The model, stated as an assertion. `configure` obtains a token without
+    // prompting — a token is transport addressing, not consent — so the first
+    // registration goes out carrying `undetermined`, and the handset is in the
+    // customer's base from its first launch. A base holding only the people who
+    // said yes measures an app's onboarding rather than its reach.
+    let transport = FakeTransport()
+    let engine = makeEngine(transport: transport)
+
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .undetermined)
+    engine.setToken(String(repeating: "ab", count: 32))
+    await engine.settle()
+
+    XCTAssertEqual(transport.requests.count, 1)
+    XCTAssertEqual(transport.bodies.last?["push_permission"] as? String, "undetermined")
+  }
+
+  func testSendsNullForWhatTheHandsetHasNotAnsweredYet() async {
+    // The permission read is asynchronous, so a registration can go out before
+    // iOS has answered. An explicit null says "not known"; omitting the field
+    // would say "unchanged", which for a device that has never reported one is
+    // a different and untrue statement.
+    let transport = FakeTransport()
+    let engine = makeEngine(transport: transport)
+
+    engine.setToken(String(repeating: "ab", count: 32))
+    await engine.settle()
+
+    let body = transport.bodies.last ?? [:]
+    XCTAssertTrue(body["push_permission"] is NSNull)
+    XCTAssertTrue(body["os_version"] is NSNull)
+    XCTAssertTrue(body["app_build"] is NSNull)
+    XCTAssertTrue(body["bundle_id"] is NSNull)
+  }
+
+  func testRegistersAgainWhenThePermissionOrTheOperatingSystemChanges() async {
+    // The mechanism is the fingerprint, and it is the serialised body: a state
+    // saying something new about the handset is by construction a state the
+    // server has not been told. Somebody switching notifications off in
+    // Settings is invisible to an app that is not running, so the next launch
+    // is when it is discovered — and this is what makes that launch cost a call
+    // while a launch that discovered nothing still costs none.
+    let transport = FakeTransport()
+    let engine = makeEngine(transport: transport)
+
+    engine.setToken(String(repeating: "ab", count: 32))
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .allowed)
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 1)
+
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .allowed)
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 1)
+
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .denied)
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    XCTAssertEqual(transport.bodies.last?["push_permission"] as? String, "denied")
+
+    engine.refreshOperatingSystem(osVersion: "26.0", pushPermission: .denied)
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 3)
+    XCTAssertEqual(transport.bodies.last?["os_version"] as? String, "26.0")
   }
 
   func testCarriesTheKeyAsABearerToken() async {

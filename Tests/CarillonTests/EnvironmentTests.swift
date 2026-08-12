@@ -1,3 +1,4 @@
+import UserNotifications
 import XCTest
 
 @testable import Carillon
@@ -99,5 +100,44 @@ final class EnvironmentTests: XCTestCase {
     // when it re-signs. The bundle running these tests has none either, which is
     // what makes this assertable at all.
     XCTAssertEqual(ProvisioningProfile.environment(in: Bundle(for: EnvironmentTests.self)), .production)
+  }
+}
+
+/// Apple has five states and the protocol has four. The fold is not arbitrary:
+/// what the server is asked to record is whether a notification will be shown,
+/// and `ephemeral` and `authorized` answer that question the same way.
+final class PushPermissionTests: XCTestCase {
+  func testAuthorizedMeansAllowed() {
+    XCTAssertEqual(PushPermission(.authorized), .allowed)
+  }
+
+  func testDeniedMeansDenied() {
+    XCTAssertEqual(PushPermission(.denied), .denied)
+  }
+
+  func testProvisionalStaysItsOwnState() {
+    // Quiet delivery is neither yes nor no: the notification reaches the handset
+    // and lands where almost nobody looks. Folding it into `allowed` would make
+    // an opened rate that collapsed look like a delivery problem.
+    XCTAssertEqual(PushPermission(.provisional), .provisional)
+  }
+
+  func testNotDeterminedMeansNobodyHasBeenAskedYet() {
+    XCTAssertEqual(PushPermission(.notDetermined), .undetermined)
+  }
+
+  func testEphemeralIsAllowed() throws {
+    // An App Clip's temporary grant: time-limited, not diminished. Named by its
+    // raw value because Apple marks the case unavailable outside iOS, and this
+    // suite runs on the host toolchain — which is also exactly the path a state
+    // Apple has not introduced yet would take.
+    let ephemeral = try XCTUnwrap(UNAuthorizationStatus(rawValue: 4))
+
+    XCTAssertEqual(PushPermission(ephemeral), .allowed)
+  }
+
+  func testTravelsUnderTheNameTheApiUses() {
+    XCTAssertEqual(PushPermission.undetermined.rawValue, "undetermined")
+    XCTAssertEqual(PushPermission.provisional.rawValue, "provisional")
   }
 }

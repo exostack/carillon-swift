@@ -8,14 +8,16 @@ import Foundation
 ///
 /// ```swift
 /// Carillon.configure(key: "carillon_mk_live_…", debug: true)
-/// await Carillon.register()
+/// // The device is registered from here on, with nobody prompted.
+/// // Ask when the app has a reason to; the answer reaches the server by itself.
+/// await Carillon.requestPermission()
 /// ```
 ///
 /// Then two lines in the app delegate, forwarded explicitly — the SDK swizzles
 /// nothing. See `didRegister(token:)` and `didOpen(_:)`.
 public enum Carillon {
   /// The SDK version reported at registration.
-  public static let sdkVersion = "0.1.0"
+  public static let sdkVersion = "0.1.1"
 
   /// Production. Overridden for staging, and for nothing else.
   public static let defaultEndpoint = "https://api.carillon.dev"
@@ -55,7 +57,13 @@ public enum Carillon {
 
   // MARK: - Configuration
 
-  /// Configures the SDK. Call once, early, before anything else.
+  /// Configures the SDK, and registers this device.
+  ///
+  /// Registration happens here, silently: no prompt is shown and none is needed.
+  /// The device appears in the customer's base from its first launch, carrying
+  /// the permission it actually has — `undetermined` until somebody is asked.
+  /// `requestPermission()` is a separate decision, made whenever the app has a
+  /// reason to ask.
   ///
   /// - Parameters:
   ///   - key: a mobile key, `carillon_mk_live_…` or `carillon_mk_test_…`. It is
@@ -82,6 +90,14 @@ public enum Carillon {
       transport: URLSessionTransport(endpoint: url)
     )
     refreshAttributes()
+
+    #if canImport(UIKit)
+      // Asked for now, with nothing asked of anybody: a push token is transport
+      // addressing, not consent. Waiting for a prompt would make the customer's
+      // base the subset of people who were asked and said yes — a measure of
+      // their onboarding rather than of their reach.
+      Task { await requestPushToken() }
+    #endif
   }
 
   // MARK: - The state the app owns
@@ -164,8 +180,23 @@ public enum Carillon {
     engine.refreshDeviceAttributes(
       timezoneId: TimeZone.current.identifier,
       locale: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
-      appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+      appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+      // The build behind that version. Two TestFlight uploads of "2.1.0" are one
+      // app_version and two builds, and the build is the one that identifies
+      // which of them a handset in the field is actually running.
+      appBuild: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+      bundleId: bundle.bundleIdentifier
     )
+
+    #if canImport(UIKit)
+      // The OS version and the notification permission, which only a running iOS
+      // app can answer and neither of which answers synchronously. Detached
+      // rather than awaited because this call site is `didFinishLaunching`: the
+      // state lands a moment later and the registration loop picks it up, which
+      // is the same path every other attribute already takes.
+      Task { await refreshEnvironmentFacts() }
+    #endif
+
     // The push environment is an environment fact, not a stored one: state
     // persisted before a fix — or restored on a machine whose world changed —
     // must never outvote what the binary can observe right now. A sandbox

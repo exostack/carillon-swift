@@ -134,6 +134,10 @@ func fullState(token: String = String(repeating: "ab", count: 32)) -> DeviceStat
   state.timezoneId = "Europe/Paris"
   state.locale = "fr-FR"
   state.appVersion = "1.4.2"
+  state.appBuild = "4271"
+  state.bundleId = "com.example.app"
+  state.osVersion = "18.5"
+  state.pushPermission = .allowed
   state.sdkVersion = Carillon.sdkVersion
   state.optedIn = true
 
