@@ -57,6 +57,10 @@ final class ConformanceTests: XCTestCase {
           "timezone_id": "Europe/Paris",
           "locale": "fr-FR",
           "app_version": "1.4.2",
+          "app_build": "4271",
+          "bundle_id": "com.example.app",
+          "os_version": "18.5",
+          "push_permission": "allowed",
           "sdk_version": "0.1.0",
           "opted_in": true,
         ],
@@ -73,6 +77,10 @@ final class ConformanceTests: XCTestCase {
           "timezone_id": NSNull(),
           "locale": NSNull(),
           "app_version": NSNull(),
+          "app_build": NSNull(),
+          "bundle_id": NSNull(),
+          "os_version": NSNull(),
+          "push_permission": NSNull(),
           "sdk_version": "0.1.0",
           "opted_in": true,
         ],
@@ -89,6 +97,10 @@ final class ConformanceTests: XCTestCase {
           "timezone_id": "Europe/Paris",
           "locale": "fr-FR",
           "app_version": "1.4.2",
+          "app_build": "4271",
+          "bundle_id": "com.example.app",
+          "os_version": "18.5",
+          "push_permission": "allowed",
           "sdk_version": "0.1.0",
           "opted_in": true,
         ],
@@ -104,8 +116,52 @@ final class ConformanceTests: XCTestCase {
           "timezone_id": "America/New_York",
           "locale": "en-US",
           "app_version": "2.0.0",
+          "app_build": "980",
+          "bundle_id": "com.example.app",
+          "os_version": "18.5",
+          "push_permission": "allowed",
           "sdk_version": "0.1.0",
           "opted_in": false,
+        ],
+      ],
+      [
+        "name": "a handset whose notifications were turned off in Settings",
+        "note":
+          "opted_in and push_permission are two different refusals: the first is the customer's own switch inside their app, the second is what the operating system will do whatever that switch says. A device can be opted in and denied, which is why both travel.",
+        "given": [
+          "token": token,
+          "environment": "production",
+          "external_id": "user-42",
+          "tags": [:],
+          "timezone_id": "Europe/Paris",
+          "locale": "fr-FR",
+          "app_version": "2.0.0",
+          "app_build": "980",
+          "bundle_id": "com.example.app",
+          "os_version": "26.0",
+          "push_permission": "denied",
+          "sdk_version": "0.1.0",
+          "opted_in": true,
+        ],
+      ],
+      [
+        "name": "a permission that has never been asked for",
+        "note":
+          "undetermined is not denied. An app that has not shown the prompt yet has a device that can still become reachable, and the distinction is what an onboarding funnel is measured on. Quiet delivery is its own state again: provisional reaches the handset and lands where almost nobody looks.",
+        "given": [
+          "token": token,
+          "environment": "sandbox",
+          "external_id": NSNull(),
+          "tags": [:],
+          "timezone_id": "Europe/Paris",
+          "locale": "fr-FR",
+          "app_version": "1.0.0",
+          "app_build": "1",
+          "bundle_id": "com.example.app.clip",
+          "os_version": "18.5",
+          "push_permission": "undetermined",
+          "sdk_version": "0.1.0",
+          "opted_in": true,
         ],
       ],
       [
@@ -120,6 +176,10 @@ final class ConformanceTests: XCTestCase {
           "timezone_id": "Europe/Paris",
           "locale": "fr",
           "app_version": "1.0.0",
+          "app_build": "1",
+          "bundle_id": "com.example.app",
+          "os_version": "18.5",
+          "push_permission": "provisional",
           "sdk_version": "0.1.0",
           "opted_in": true,
         ],
@@ -145,6 +205,11 @@ final class ConformanceTests: XCTestCase {
     state.timezoneId = given["timezone_id"] as? String
     state.locale = given["locale"] as? String
     state.appVersion = given["app_version"] as? String
+    state.appBuild = given["app_build"] as? String
+    state.bundleId = given["bundle_id"] as? String
+    state.osVersion = given["os_version"] as? String
+    state.pushPermission =
+      (given["push_permission"] as? String).flatMap(PushPermission.init(rawValue:))
     state.sdkVersion = given["sdk_version"] as? String
     state.optedIn = given["opted_in"] as? Bool ?? true
 

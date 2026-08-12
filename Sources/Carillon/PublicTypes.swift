@@ -1,23 +1,5 @@
 import Foundation
 
-/// What `register()` resolved to.
-///
-/// Three cases and no error: none of them is a failure the caller can retry, and
-/// all three are things an app legitimately wants to branch on. A thrown error
-/// would make the simulator — the most common one during development — look like
-/// a bug in the integration.
-public enum RegistrationOutcome: String, Equatable {
-  /// Permission granted and a token requested from APNs. The token itself
-  /// arrives later, on the delegate callback the app forwards.
-  case registered
-  /// The person said no. Not an error, and not a state to keep asking about.
-  case denied
-  /// No APNs token exists on a simulator, so nothing is claimed. Said out loud
-  /// rather than reported as success, which would have the developer waiting for
-  /// a notification that can never arrive.
-  case simulator
-}
-
 /// An open, handed to the app.
 ///
 /// The full payload is included because the customer's own keys travel in it and
@@ -42,6 +24,13 @@ public struct DebugInfo: Codable, Equatable {
   public let token: String?
   public let deviceId: String?
   public let environment: String
+  public let bundleId: String?
+  public let appBuild: String?
+  public let osVersion: String?
+  /// `allowed`, `denied`, `provisional` or `undetermined`, and nil until the app
+  /// has been able to ask iOS. A string rather than a type, for the reason
+  /// `environment` is one: this is read in a ticket, not switched on.
+  public let pushPermission: String?
   public let lastRegistrationAt: Date?
   public let lastRegistrationResult: String?
   public let queuedEvents: Int
@@ -53,6 +42,10 @@ public struct DebugInfo: Codable, Equatable {
     case token
     case deviceId = "device_id"
     case environment
+    case bundleId = "bundle_id"
+    case appBuild = "app_build"
+    case osVersion = "os_version"
+    case pushPermission = "push_permission"
     case lastRegistrationAt = "last_registration_at"
     case lastRegistrationResult = "last_registration_result"
     case queuedEvents = "queued_events"
@@ -70,6 +63,10 @@ extension DebugInfo: CustomStringConvertible {
       ("token", token ?? "—"),
       ("device_id", deviceId ?? "—"),
       ("environment", environment),
+      ("bundle_id", bundleId ?? "—"),
+      ("app_build", appBuild ?? "—"),
+      ("os_version", osVersion ?? "—"),
+      ("push_permission", pushPermission ?? "—"),
       ("last_registration_at", lastRegistrationAt.map(ISO8601.string(from:)) ?? "—"),
       ("last_registration_result", lastRegistrationResult ?? "—"),
       ("queued_events", String(queuedEvents)),

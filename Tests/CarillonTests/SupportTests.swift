@@ -55,7 +55,9 @@ final class DebugInfoTests: XCTestCase {
       transport: transport, clock: clock, store: store, key: "carillon_mk_test_abc")
 
     engine.refreshDeviceAttributes(
-      timezoneId: "Europe/Paris", locale: "fr-FR", appVersion: "1.4.2")
+      timezoneId: "Europe/Paris", locale: "fr-FR", appVersion: "1.4.2", appBuild: "4271",
+      bundleId: "com.example.app")
+    engine.refreshOperatingSystem(osVersion: "18.5", pushPermission: .denied)
     engine.setToken(String(repeating: "ab", count: 32))
     await engine.settle()
 
@@ -72,6 +74,11 @@ final class DebugInfoTests: XCTestCase {
     XCTAssertEqual(info.token, String(repeating: "ab", count: 32))
     XCTAssertEqual(info.deviceId, "01937b1e-0000-7000-8000-000000000001")
     XCTAssertEqual(info.environment, "sandbox")
+    XCTAssertEqual(info.bundleId, "com.example.app")
+    XCTAssertEqual(info.appBuild, "4271")
+    XCTAssertEqual(info.osVersion, "18.5")
+    // The first thing to look at when an integration works and nothing arrives.
+    XCTAssertEqual(info.pushPermission, "denied")
     XCTAssertEqual(info.lastRegistrationAt, clock.now)
     XCTAssertEqual(info.lastRegistrationResult, "registered")
     XCTAssertEqual(info.queuedEvents, 1)
@@ -179,6 +186,18 @@ final class StoreTests: XCTestCase {
     var state = fullState()
     let before = state.fingerprint()
     state.optedIn = false
+
+    XCTAssertNotEqual(before, state.fingerprint())
+  }
+
+  func testFingerprintNoticesARevokedPermission() {
+    // Stated separately from the case above because this is the one nobody in
+    // the app ever calls a setter for: it changes in Settings, while the app is
+    // not running, and the only thing that carries it to the server is the next
+    // launch finding a body it has not sent before.
+    var state = fullState()
+    let before = state.fingerprint()
+    state.pushPermission = .denied
 
     XCTAssertNotEqual(before, state.fingerprint())
   }

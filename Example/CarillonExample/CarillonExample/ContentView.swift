@@ -21,7 +21,7 @@ final class Bench: ObservableObject {
 
   @Published private(set) var lines: [String] = []
   @Published var info: DebugInfo?
-  @Published var lastOutcome: String?
+  @Published var lastPermission: String?
 
   private init() {}
 
@@ -50,7 +50,13 @@ final class Bench: ObservableObject {
 
     Carillon.configure(key: key, endpoint: endpoint, debug: true)
     log("configured for \(endpoint) with \(key.isEmpty ? "no key" : key)")
+    log("registering silently — no prompt is shown; watch device_id appear below")
+
+    // The token arrives on the delegate a moment later, and the registration
+    // that follows it a moment after that. Re-read on a delay so that the panel
+    // shows the device the server named rather than the emptiness before it.
     refresh()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.refresh() }
   }
 
   func log(_ line: String) {
@@ -67,11 +73,11 @@ final class Bench: ObservableObject {
     }
   }
 
-  func register() {
+  func requestPermission() {
     Task {
-      let outcome = await Carillon.register()
-      await MainActor.run { self.lastOutcome = outcome.rawValue }
-      log("register() → \(outcome.rawValue)")
+      let permission = await Carillon.requestPermission()
+      await MainActor.run { self.lastPermission = permission.rawValue }
+      log("requestPermission() → \(permission.rawValue)")
       refresh()
     }
   }
@@ -121,11 +127,17 @@ struct ContentView: View {
   }
 
   private var registration: some View {
-    Section("Registration") {
-      Button("register()") { bench.register() }
+    Section("Permission") {
+      // Registration is not here on purpose: Apply did it, without prompting.
+      // What this section asks for is display, which is a different question.
+      Text("Configure registers this device on its own. This asks whether iOS may show anything.")
+        .font(.footnote)
+        .foregroundColor(.secondary)
 
-      if let outcome = bench.lastOutcome {
-        LabeledLine(name: "outcome", value: outcome)
+      Button("requestPermission()") { bench.requestPermission() }
+
+      if let permission = bench.lastPermission {
+        LabeledLine(name: "permission", value: permission)
       }
     }
   }
