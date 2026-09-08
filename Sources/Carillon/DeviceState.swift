@@ -1,12 +1,7 @@
 import Foundation
 
-/// A tag value, as the API defines it: a flat scalar and nothing else.
-///
-/// The literal conformances are what keep the customer's call site readable —
-/// `setTags(["plan": "pro", "seats": 5, "beta": true])` compiles as written. A
-/// dictionary of `Any` would read the same and fail at runtime on the first
-/// nested value; the API refuses those, and refusing them at the call site is
-/// the difference between a compiler message and a 422 in production.
+/// Device tag value: string, integer, decimal, or boolean.
+/// Supports Swift literals, for example setTags(["plan": "pro", "seats": 5]).
 public enum TagValue: Hashable {
   case string(String)
   case int(Int)

@@ -1,35 +1,19 @@
 import Foundation
 
-/// Carillon iOS SDK.
-///
-/// Native, zero dependencies. The public surface is additive forever: this code
-/// ships inside customer binaries and cannot be updated by us, so a mistake here
-/// is paid for in app-store release cycles rather than in a deploy.
-///
-/// ```swift
-/// Carillon.configure(key: "carillon_mk_live_…", debug: true)
-/// // The device is registered from here on, with nobody prompted.
-/// // Ask when the app has a reason to; the answer reaches the server by itself.
-/// await Carillon.requestPermission()
-/// ```
-///
-/// Then two lines in the app delegate, forwarded explicitly — the SDK swizzles
-/// nothing. See `didRegister(token:)` and `didOpen(_:)`.
+/// Carillon iOS SDK. Configure at app startup and forward APNs registration
+/// and notification-open callbacks. See the README for setup.
 public enum Carillon {
   /// The SDK version reported at registration.
   public static let sdkVersion = "0.1.1"
 
-  /// Production. Overridden for staging, and for nothing else.
+  /// Default API endpoint. Override for staging or local development.
   public static let defaultEndpoint = "https://api.carillon.dev"
 
   private static let installLock = NSLock()
   private static var installed: Engine?
 
-  /// The engine, built on first use.
-  ///
-  /// It exists before `configure` is called so that a callback arriving early —
-  /// an app launched by a tap runs its delegate before anything else — is held
-  /// rather than dropped. Without a key it sends nothing; it just remembers.
+  /// Created before configure so early notification opens can be buffered.
+  /// No requests are sent until a key and token are available.
   static var engine: Engine {
     installLock.lock()
     defer { installLock.unlock() }
@@ -48,7 +32,7 @@ public enum Carillon {
     return engine
   }
 
-  /// Replaces the engine. Used by the tests, and by nothing that ships.
+  /// Replaces the engine for tests.
   static func install(_ engine: Engine?) {
     installLock.lock()
     installed = engine
@@ -57,22 +41,14 @@ public enum Carillon {
 
   // MARK: - Configuration
 
-  /// Configures the SDK, and registers this device.
-  ///
-  /// Registration happens here, silently: no prompt is shown and none is needed.
-  /// The device appears in the customer's base from its first launch, carrying
-  /// the permission it actually has — `undetermined` until somebody is asked.
-  /// `requestPermission()` is a separate decision, made whenever the app has a
-  /// reason to ask.
+  /// Starts APNs token acquisition and device registration without a permission prompt.
+  /// Call once at app startup. Registration requires a token and network access.
+  /// Use requestPermission() separately to request notification display permission.
   ///
   /// - Parameters:
-  ///   - key: a mobile key, `carillon_mk_live_…` or `carillon_mk_test_…`. It is
-  ///     public by construction — it ships inside this binary — which is why it
-  ///     can only register this device and report this device's events.
-  ///   - endpoint: the API. Defaults to production; override it for staging.
-  ///   - debug: verbose logging. Honoured only in a debug build: the logging
-  ///     paths are compiled out of a release, so a `true` left in shipped code
-  ///     logs nothing and costs nothing.
+  ///   - key: Mobile API key from the Carillon dashboard.
+  ///   - endpoint: API base URL. Defaults to production.
+  ///   - debug: Enables logging in debug builds only.
   public static func configure(
     key: String,
     endpoint: String = defaultEndpoint,
@@ -102,49 +78,35 @@ public enum Carillon {
 
   // MARK: - The state the app owns
 
-  /// Your own identifier for the person using this device.
-  ///
-  /// An attribute of the device, never an entity: one person on two handsets is
-  /// two devices, and both carry the same identifier.
+  /// Sets the external user id for this device. Multiple devices may share an id.
   public static func identify(_ externalId: String) {
     engine.identify(externalId)
   }
 
-  /// Forgets the identifier. The device stays registered and reachable — this
-  /// says who is using it is no longer known, not that it should stop receiving.
+  /// Clears the external user id without opting out or deleting the device.
   public static func clearIdentity() {
     engine.identify(nil)
   }
 
-  /// Replaces the tags whole.
-  ///
-  /// The SDK holds the canonical map and the server replaces what it holds, so
-  /// this is the complete set every time. Merging would make removing a tag
-  /// impossible without inventing a word for "remove".
+  /// Replaces all device tags. Omitted tags are removed.
   public static func setTags(_ tags: [String: TagValue]) {
     engine.setTags(tags)
   }
 
-  /// Opts the device back in. Notifications resume at the next send.
+  /// Sets opted_in to true and syncs it to the server. Does not change OS permission.
   public static func optIn() {
     engine.setOptedIn(true)
   }
 
-  /// Opts the device out. The row stays, so the person can be opted back in, and
-  /// so the customer can still see that this handset exists.
+  /// Sets opted_in to false and syncs it to the server. Keeps the device registered.
   public static func optOut() {
     engine.setOptedIn(false)
   }
 
   // MARK: - The delegate callbacks the app forwards
 
-  /// Forwarded from
-  /// `application(_:didRegisterForRemoteNotificationsWithDeviceToken:)`.
-  ///
-  /// Takes the `Data` APNs handed over and hex-encodes it here, so the customer
-  /// never holds the string. Passing `token.description` instead is the single
-  /// most common integration mistake there is, and this is the shape that makes
-  /// it impossible.
+  /// Forward application(_:didRegisterForRemoteNotificationsWithDeviceToken:).
+  /// Pass the original APNs Data token; the SDK hex-encodes it.
   public static func didRegister(token: Data) {
     refreshAttributes()
     engine.setToken(Hex.encode(token))
@@ -152,11 +114,7 @@ public enum Carillon {
 
   // MARK: - Opens
 
-  /// Called when a notification sent by Carillon is opened.
-  ///
-  /// Set it once, wherever the app decides what a tap means. An open that
-  /// arrived before a handler was attached — a cold start, which is the most
-  /// valuable tap there is — is delivered as soon as one is.
+  /// Handles notification opens. Opens received before a handler is attached are replayed when it is set.
   public static var onOpened: ((OpenedNotification) -> Void)? {
     get { engine.currentOnOpened }
     set { engine.setOnOpened(newValue) }
@@ -164,18 +122,12 @@ public enum Carillon {
 
   // MARK: - Support
 
-  /// One value, made to be pasted into a support ticket.
-  ///
-  /// Available in every configuration, release included. Debug logging speaks
-  /// unprompted and is absent from a release; this answers when asked, and
-  /// answering is never the wrong thing to do.
+  /// Returns SDK configuration, registration status, and queued-event count. Available in release builds.
   public static func debugInfo() -> DebugInfo {
     engine.debugInfo()
   }
 
-  /// What the operating system can answer for itself, re-read rather than
-  /// remembered: a person who changes their phone's language has changed which
-  /// text they should be sent.
+  /// Refreshes device attributes from current system settings.
   static func refreshAttributes(bundle: Bundle = .main) {
     engine.refreshDeviceAttributes(
       timezoneId: TimeZone.current.identifier,
