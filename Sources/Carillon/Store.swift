@@ -11,6 +11,7 @@ protocol Store: AnyObject {
   var state: DeviceState? { get set }
   /// The id the server returned. Kept for `debugInfo()`, which is the first
   /// thing support asks for and the only place it is ever needed.
+  var installationSecret: String? { get set }
   var deviceId: String? { get set }
   /// The fingerprint of the state the server has confirmed. What makes a second
   /// launch with nothing changed cost no call at all.
@@ -68,6 +69,11 @@ final class UserDefaultsStore: Store {
     set { write(newValue, "state") }
   }
 
+  var installationSecret: String? {
+    get { defaults.string(forKey: prefix + "installationSecret") }
+    set { defaults.set(newValue, forKey: prefix + "installationSecret") }
+  }
+
   var deviceId: String? {
     get { defaults.string(forKey: prefix + "deviceId") }
     set { defaults.set(newValue, forKey: prefix + "deviceId") }
@@ -107,6 +113,7 @@ final class UserDefaultsStore: Store {
 /// The store a test uses, and the one the SDK falls back to before `configure`.
 final class MemoryStore: Store {
   var state: DeviceState?
+  var installationSecret: String?
   var deviceId: String?
   var registeredFingerprint: String?
   var events: [QueuedEvent] = []

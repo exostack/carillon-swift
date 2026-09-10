@@ -5,6 +5,32 @@ import XCTest
 /// Registration is the call the whole product depends on: a device that never
 /// registers receives nothing, and the failure is invisible from the app.
 final class RegistrationTests: XCTestCase {
+  func testPersistsProofAndReportsOnlyChangedDeviceIDs() async {
+    let store = MemoryStore()
+    let transport = FakeTransport([
+      .response(status: 200, body: Data("{\"id\":\"first\"}".utf8)),
+      .response(status: 200, body: Data("{\"id\":\"first\"}".utf8)),
+      .response(status: 200, body: Data("{\"id\":\"winner\"}".utf8)),
+    ])
+    let engine = makeEngine(transport: transport, store: store)
+    var changes: [String] = []
+    engine.onDeviceIdChanged = { changes.append($0) }
+    engine.setToken("first-token")
+    await engine.settle()
+    let proof = store.installationSecret
+    XCTAssertEqual(proof?.count, 43)
+    engine.setToken("second-token")
+    await engine.settle()
+    XCTAssertEqual(transport.bodies.last?["device_id"] as? String, "first")
+    XCTAssertEqual(transport.bodies.last?["installation_secret"] as? String, proof)
+    engine.setToken("third-token")
+    await engine.settle()
+    XCTAssertEqual(changes, ["first", "winner"])
+    XCTAssertEqual(engine.debugInfo().deviceId, "winner")
+    _ = makeEngine(store: store)
+    XCTAssertEqual(store.installationSecret, proof)
+  }
+
   func testSendsTheWholeTableAsTheServerDefinesIt() async {
     let transport = FakeTransport()
     let engine = makeEngine(transport: transport)
