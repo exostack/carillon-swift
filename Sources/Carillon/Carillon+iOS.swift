@@ -45,6 +45,22 @@
       return permission
     }
 
+    /// Forward UNUserNotificationCenterDelegate.willPresent without swizzling.
+    public static func willPresent(
+      _ notification: UNNotification,
+      completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+      let content = notification.request.content
+      let received = ReceivedNotification(userInfo: content.userInfo, title: content.title, body: content.body)
+      let decision = onReceived?(received) ?? .show
+      completionHandler(decision == .show ? [.banner, .list, .sound, .badge] : [])
+    }
+
+    /// Removes notifications currently displayed by this app.
+    public static func clearNotifications() {
+      UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+    }
+
     /// Forward application(_:didFailToRegisterForRemoteNotificationsWithError:).
     /// Records the error in debugInfo() and the debug log.
     public static func didFailToRegister(_ error: Error) {

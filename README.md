@@ -116,3 +116,70 @@ Regenerate only for an intentional protocol change, then update the other SDKs:
 ```sh
 CARILLON_WRITE_FIXTURES=1 swift test
 ```
+
+
+## Device identity
+
+```swift
+let id = Carillon.deviceId
+Carillon.onDeviceIdChanged = { id in print(id) }
+```
+
+The SDK persists a random installation secret and the last confirmed device ID.
+Token rotation reuses that ID when the server validates the proof. Reinstallation
+or merging with an existing token registration can change the ID; the callback
+fires on first registration and when the confirmed ID changes. The ID itself is
+not a credential. Never log or export the installation secret.
+
+## Foreground notifications
+
+Forward the notification-center callback explicitly:
+
+```swift
+func userNotificationCenter(
+  _ center: UNUserNotificationCenter,
+  willPresent notification: UNNotification,
+  withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+) {
+  Carillon.willPresent(notification, completionHandler: completionHandler)
+}
+
+Carillon.onReceived = { notification in
+  // Return .suppress when your app presents its own interface.
+  return .show
+}
+```
+
+Without a handler, the SDK requests the banner, list, sound and badge. A notification
+without a Carillon stamp reaches the handler with `deliveryId == nil`.
+`Carillon.clearNotifications()` removes the app's delivered notifications from Notification Center.
+
+## Notification images
+
+Add a Notification Service Extension target in Xcode with bundle ID
+`<your bundle ID>.CarillonNotificationExtension`. Add the Swift package's
+`CarillonNotificationExtension` product to that target, then use:
+
+```swift
+import UserNotifications
+import CarillonNotificationExtension
+
+final class NotificationService: UNNotificationServiceExtension {
+  private var helper: CarillonNotificationExtension?
+
+  override func didReceive(_ request: UNNotificationRequest,
+    withContentHandler handler: @escaping (UNNotificationContent) -> Void) {
+    helper = CarillonNotificationExtension.didReceive(request, withContentHandler: handler)
+  }
+
+  override func serviceExtensionTimeWillExpire() {
+    CarillonNotificationExtension.serviceExtensionTimeWillExpire(helper)
+  }
+}
+```
+
+Keep the returned helper until completion. It reads `carillon.image`, downloads over HTTPS
+with a 20-second budget and a 10 MiB cap, and falls back to the original notification on failure.
+No App Group is required. Include the extension bundle ID in signing provisioning profiles,
+including Fastlane `match`. If the app already has a notification service extension,
+integrate the helper into that extension rather than embedding a second one.

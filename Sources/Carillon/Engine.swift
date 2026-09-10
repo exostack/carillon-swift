@@ -47,6 +47,12 @@ final class Engine {
     debugEnabled: Bool = false,
     environment: PushEnvironment = .production
   ) {
+    if store.installationSecret == nil {
+      store.installationSecret = Data((0..<32).map { _ in UInt8.random(in: 0...255) })
+        .base64EncodedString().replacingOccurrences(of: "+", with: "-")
+        .replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+      store.registeredFingerprint = nil
+    }
     self.store = store
     self.transport = transport
     self.clock = clock
@@ -214,10 +220,15 @@ final class Engine {
       }
 
       let (key, debug) = lock.withLock { (self.key, debugEnabled) }
-      let body = JSON.encode(snapshot.registrationBody()) ?? Data()
+      var registration = snapshot.registrationBody()
+      lock.withLock {
+        registration["device_id"] = store.deviceId
+        registration["installation_secret"] = store.installationSecret
+      }
+      let body = JSON.encode(registration) ?? Data()
       let request = HTTPRequest(method: "POST", path: "/v1/devices", body: body, key: key)
 
-      Log.write(debug, "registering: \(String(decoding: body, as: UTF8.self))")
+      Log.write(debug, "registering device")
 
       switch Verdict(await transport.send(request)) {
       case let .accepted(response):
@@ -289,6 +300,18 @@ final class Engine {
     return fingerprint != store.registeredFingerprint && fingerprint != refusedFingerprint
   }
 
+  private var receivedHandler: ((ReceivedNotification) -> NotificationPresentation)?
+  var onReceived: ((ReceivedNotification) -> NotificationPresentation)? {
+    get { lock.withLock { receivedHandler } }
+    set { lock.withLock { receivedHandler = newValue } }
+  }
+
+  private var deviceIdHandler: ((String) -> Void)?
+  var onDeviceIdChanged: ((String) -> Void)? {
+    get { lock.withLock { deviceIdHandler } }
+    set { lock.withLock { deviceIdHandler = newValue } }
+  }
+
   private func recordRegistration(fingerprint: String, response: Data, debug: Bool) {
     // The server names the device it created. Kept for `debugInfo()`, which is
     // the first thing support asks for — and read leniently, because a
@@ -296,13 +319,16 @@ final class Engine {
     let object = (try? JSONSerialization.jsonObject(with: response)) as? [String: Any]
     let id = object?["id"] as? String
 
-    lock.withLock {
+    let handler = lock.withLock { () -> ((String) -> Void)? in
+      let changed = id != nil && id != store.deviceId
       store.registeredFingerprint = fingerprint
       refusedFingerprint = nil
       if let id { store.deviceId = id }
       lastRegistrationAt = clock.now
       lastRegistrationResult = "registered"
+      return changed ? deviceIdHandler : nil
     }
+    if let id { handler?(id) }
 
     Log.write(debug, "registered as \(id ?? "an unnamed device")")
   }

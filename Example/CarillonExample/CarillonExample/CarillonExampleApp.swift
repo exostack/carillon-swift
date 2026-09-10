@@ -61,9 +61,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     completionHandler()
   }
 
-  /// Shows the notification while the app is in the foreground, so a bench on
-  /// screen still sees something arrive. Presentation is the app's business —
-  /// the SDK takes no position on it.
+  /// Forwards foreground presentation to the SDK.
   func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
@@ -78,6 +76,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
       "willPresent (foreground): \(content.title)"
         + (stamp.map { " — carillon delivery \($0)" } ?? " — no carillon stamp, not ours")
     )
-    completionHandler([.banner, .sound, .badge])
+    Carillon.willPresent(notification, completionHandler: completionHandler)
   }
 }
