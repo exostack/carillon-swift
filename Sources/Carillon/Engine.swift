@@ -300,6 +300,12 @@ final class Engine {
     return fingerprint != store.registeredFingerprint && fingerprint != refusedFingerprint
   }
 
+  private var receivedHandler: ((ReceivedNotification) -> NotificationPresentation)?
+  var onReceived: ((ReceivedNotification) -> NotificationPresentation)? {
+    get { lock.withLock { receivedHandler } }
+    set { lock.withLock { receivedHandler = newValue } }
+  }
+
   private var deviceIdHandler: ((String) -> Void)?
   var onDeviceIdChanged: ((String) -> Void)? {
     get { lock.withLock { deviceIdHandler } }

@@ -4,7 +4,7 @@ import Foundation
 /// and notification-open callbacks. See the README for setup.
 public enum Carillon {
   /// The SDK version reported at registration.
-  public static let sdkVersion = "0.1.1"
+  public static let sdkVersion = "0.2.0"
 
   /// Default API endpoint. Override for staging or local development.
   public static let defaultEndpoint = "https://api.carillon.dev"
@@ -127,6 +127,12 @@ public enum Carillon {
   public static var onDeviceIdChanged: ((String) -> Void)? {
     get { engine.onDeviceIdChanged }
     set { engine.onDeviceIdChanged = newValue }
+  }
+
+  /// Called for foreground notifications. Returning suppress hides their system presentation.
+  public static var onReceived: ((ReceivedNotification) -> NotificationPresentation)? {
+    get { engine.onReceived }
+    set { engine.onReceived = newValue }
   }
 
   // MARK: - Support

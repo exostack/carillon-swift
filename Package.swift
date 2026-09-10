@@ -9,10 +9,13 @@ let package = Package(
   // a simulator. The UIKit surface is compiled only where UIKit exists.
   platforms: [.iOS(.v15), .macOS(.v12)],
   products: [
-    .library(name: "Carillon", targets: ["Carillon"])
+    .library(name: "Carillon", targets: ["Carillon"]),
+    .library(name: "CarillonNotificationExtension", targets: ["CarillonNotificationExtension"])
   ],
   targets: [
     .target(name: "Carillon"),
+    .target(name: "CarillonNotificationExtension"),
+    .testTarget(name: "CarillonNotificationExtensionTests", dependencies: ["CarillonNotificationExtension"]),
     .testTarget(name: "CarillonTests", dependencies: ["Carillon"]),
   ]
 )
