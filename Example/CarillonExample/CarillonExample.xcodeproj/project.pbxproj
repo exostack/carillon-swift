@@ -7,16 +7,59 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09D6C9CA4C7348D1A29840A5 /* CarillonNotificationExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 4433053986CF4C5B9BD301DE /* CarillonNotificationExtension.appex */; };
 		306056F03029123F00596F38 /* Carillon in Frameworks */ = {isa = PBXBuildFile; productRef = 306056EF3029123F00596F38 /* Carillon */; };
+		4440825A24EAD1E858F6D4D1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DE758715185FC097A68C858 /* Foundation.framework */; };
+		4C35085270E446419434476F /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24AF591916134F6CB85BE8F0 /* NotificationService.swift */; };
+		75857BE471A03ACEDED18A4C /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92629085C2DE38283BFFCAB9 /* NotificationTests.swift */; };
+		B392CB981A824F23998BB549 /* CarillonNotificationExtension in Frameworks */ = {isa = PBXBuildFile; productRef = B770B66F4FB0415A90BFA3C5 /* CarillonNotificationExtension */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		66FD06E025E82D169BACF974 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 306056D83029117900596F38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 306056DF3029117900596F38;
+			remoteInfo = CarillonExample;
+		};
+		7433E1415C9841A3AB2B02BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 306056D83029117900596F38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D82806CCE0E34A31B4248444;
+			remoteInfo = CarillonNotificationExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		796FEDE2E29E4BC294936F32 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				09D6C9CA4C7348D1A29840A5 /* CarillonNotificationExtension.appex in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		24AF591916134F6CB85BE8F0 /* NotificationService.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = NotificationService.swift; path = CarillonNotificationExtension/NotificationService.swift; sourceTree = "<group>"; };
 		306056E03029117900596F38 /* CarillonExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarillonExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4433053986CF4C5B9BD301DE /* CarillonNotificationExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CarillonNotificationExtension.appex; path = CarillonNotificationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6DE758715185FC097A68C858 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		92629085C2DE38283BFFCAB9 /* NotificationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationTests.swift; sourceTree = "<group>"; };
+		E776ED8A813773DE5C99CDE7 /* CarillonExampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarillonExampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		306056E23029117900596F38 /* CarillonExample */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarillonExample;
 			sourceTree = "<group>";
 		};
@@ -31,14 +74,50 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9BA69DB9668F4E6C9CC75A9D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B392CB981A824F23998BB549 /* CarillonNotificationExtension in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2319A80A058AC4094BC3B06 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4440825A24EAD1E858F6D4D1 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D3A45B26398479F98DAEBCC /* CarillonNotificationExtension */ = {
+			isa = PBXGroup;
+			children = (
+				24AF591916134F6CB85BE8F0 /* NotificationService.swift */,
+			);
+			name = CarillonNotificationExtension;
+			path = .;
+			sourceTree = "<group>";
+		};
+		270DFF98B24E9BD00961053F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CA6B54243491BCFC98FD1A2A /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		306056D73029117900596F38 = {
 			isa = PBXGroup;
 			children = (
 				306056E23029117900596F38 /* CarillonExample */,
 				306056E13029117900596F38 /* Products */,
+				1D3A45B26398479F98DAEBCC /* CarillonNotificationExtension */,
+				270DFF98B24E9BD00961053F /* Frameworks */,
+				EF31B9702B4656F84E14088A /* CarillonExampleUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -46,13 +125,50 @@
 			isa = PBXGroup;
 			children = (
 				306056E03029117900596F38 /* CarillonExample.app */,
+				4433053986CF4C5B9BD301DE /* CarillonNotificationExtension.appex */,
+				E776ED8A813773DE5C99CDE7 /* CarillonExampleUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CA6B54243491BCFC98FD1A2A /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				6DE758715185FC097A68C858 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		EF31B9702B4656F84E14088A /* CarillonExampleUITests */ = {
+			isa = PBXGroup;
+			children = (
+				92629085C2DE38283BFFCAB9 /* NotificationTests.swift */,
+			);
+			name = CarillonExampleUITests;
+			path = CarillonExampleUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		03091EDA5959EA5ABFF8B902 /* CarillonExampleUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F34C0089B21C7A503EAE138D /* Build configuration list for PBXNativeTarget "CarillonExampleUITests" */;
+			buildPhases = (
+				4DFCBAC6DB0EF1F00A2CEAD9 /* Sources */,
+				E2319A80A058AC4094BC3B06 /* Frameworks */,
+				745F892A4BCC2D371D3DB126 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3636FD281D2B459217F253E5 /* PBXTargetDependency */,
+			);
+			name = CarillonExampleUITests;
+			productName = CarillonExampleUITests;
+			productReference = E776ED8A813773DE5C99CDE7 /* CarillonExampleUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		306056DF3029117900596F38 /* CarillonExample */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 306056EB3029117900596F38 /* Build configuration list for PBXNativeTarget "CarillonExample" */;
@@ -60,10 +176,12 @@
 				306056DC3029117900596F38 /* Sources */,
 				306056DD3029117900596F38 /* Frameworks */,
 				306056DE3029117900596F38 /* Resources */,
+				796FEDE2E29E4BC294936F32 /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				85CA2AE67C2041639CF37774 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				306056E23029117900596F38 /* CarillonExample */,
@@ -75,6 +193,25 @@
 			productName = CarillonExample;
 			productReference = 306056E03029117900596F38 /* CarillonExample.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D82806CCE0E34A31B4248444 /* CarillonNotificationExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA5943D8E1784CEBAFD1DAB0 /* Build configuration list for PBXNativeTarget "CarillonNotificationExtension" */;
+			buildPhases = (
+				5FB3FCF166D1417BB7C1AB4B /* Sources */,
+				9BA69DB9668F4E6C9CC75A9D /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CarillonNotificationExtension;
+			packageProductDependencies = (
+				B770B66F4FB0415A90BFA3C5 /* CarillonNotificationExtension */,
+			);
+			productName = CarillonNotificationExtension;
+			productReference = 4433053986CF4C5B9BD301DE /* CarillonNotificationExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -101,7 +238,7 @@
 			mainGroup = 306056D73029117900596F38;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				306056EE3029123F00596F38 /* XCLocalSwiftPackageReference "../../../carillon-swift" */,
+				306056EE3029123F00596F38 /* XCLocalSwiftPackageReference ".." */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 306056E13029117900596F38 /* Products */;
@@ -109,12 +246,21 @@
 			projectRoot = "";
 			targets = (
 				306056DF3029117900596F38 /* CarillonExample */,
+				D82806CCE0E34A31B4248444 /* CarillonNotificationExtension */,
+				03091EDA5959EA5ABFF8B902 /* CarillonExampleUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		306056DE3029117900596F38 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		745F892A4BCC2D371D3DB126 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -131,9 +277,78 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4DFCBAC6DB0EF1F00A2CEAD9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75857BE471A03ACEDED18A4C /* NotificationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FB3FCF166D1417BB7C1AB4B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C35085270E446419434476F /* NotificationService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		3636FD281D2B459217F253E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CarillonExample;
+			target = 306056DF3029117900596F38 /* CarillonExample */;
+			targetProxy = 66FD06E025E82D169BACF974 /* PBXContainerItemProxy */;
+		};
+		85CA2AE67C2041639CF37774 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D82806CCE0E34A31B4248444 /* CarillonNotificationExtension */;
+			targetProxy = 7433E1415C9841A3AB2B02BA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		0B724EEA789AA78C79EF9A23 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = CarillonExample;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		0B7FFE36C9664ABFBD083FEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = "CarillonNotificationExtension/CarillonNotificationExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example.CarillonNotificationExtension;
+				PRODUCT_MODULE_NAME = CarillonNotificationService;
+				PRODUCT_NAME = CarillonNotificationExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Release;
+		};
 		306056E93029117900596F38 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -253,6 +468,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarillonExample/CarillonExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
@@ -275,7 +491,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				CODE_SIGN_ENTITLEMENTS = CarillonExample/CarillonExample.entitlements;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -297,6 +512,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarillonExample/CarillonExample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
@@ -319,7 +535,6 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.5;
 				MARKETING_VERSION = 1.0;
-				CODE_SIGN_ENTITLEMENTS = CarillonExample/CarillonExample.entitlements;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -335,6 +550,48 @@
 				XROS_DEPLOYMENT_TARGET = 26.5;
 			};
 			name = Release;
+		};
+		7BA758E3A2FA51D8313BE571 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = CarillonExample;
+			};
+			name = Debug;
+		};
+		B82E61BCFE1548AF9851FF0D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "CarillonNotificationExtension/CarillonNotificationExtension-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.carillon.example.CarillonNotificationExtension;
+				PRODUCT_MODULE_NAME = CarillonNotificationService;
+				PRODUCT_NAME = CarillonNotificationExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -357,10 +614,28 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA5943D8E1784CEBAFD1DAB0 /* Build configuration list for PBXNativeTarget "CarillonNotificationExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B82E61BCFE1548AF9851FF0D /* Debug */,
+				0B7FFE36C9664ABFBD083FEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F34C0089B21C7A503EAE138D /* Build configuration list for PBXNativeTarget "CarillonExampleUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0B724EEA789AA78C79EF9A23 /* Release */,
+				7BA758E3A2FA51D8313BE571 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		306056EE3029123F00596F38 /* XCLocalSwiftPackageReference "../../../carillon-swift" */ = {
+		306056EE3029123F00596F38 /* XCLocalSwiftPackageReference ".." */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../..;
 		};
@@ -370,6 +645,11 @@
 		306056EF3029123F00596F38 /* Carillon */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Carillon;
+		};
+		B770B66F4FB0415A90BFA3C5 /* CarillonNotificationExtension */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 306056EE3029123F00596F38 /* XCLocalSwiftPackageReference ".." */;
+			productName = CarillonNotificationExtension;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
