@@ -181,5 +181,5 @@ final class NotificationService: UNNotificationServiceExtension {
 Keep the returned helper until completion. It reads `carillon.image`, downloads over HTTPS
 with a 20-second budget and a 10 MiB cap, and falls back to the original notification on failure.
 No App Group is required. Include the extension bundle ID in signing provisioning profiles,
-including Fastlane `match`. During a another push provider migration, replace its notification service
-extension with this target rather than embedding two service extensions.
+including Fastlane `match`. If the app already has a notification service extension,
+integrate the helper into that extension rather than embedding a second one.
