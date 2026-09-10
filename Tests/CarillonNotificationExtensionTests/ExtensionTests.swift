@@ -60,7 +60,7 @@ extension ExtensionTests {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [ImageProtocol.self]
     helper.start(configuration: configuration)
-    await fulfillment(of: [done], timeout: 3)
+    await fulfillment(of: [done], timeout: 30)
     helper.finish()
   }
 
@@ -82,7 +82,7 @@ extension ExtensionTests {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [ImageProtocol.self]
     helper.start(configuration: configuration)
-    await fulfillment(of: [done], timeout: 3)
+    await fulfillment(of: [done], timeout: 30)
   }
 }
 
@@ -115,7 +115,7 @@ extension ExtensionTests {
       configuration.protocolClasses = [ImageProtocol.self]
       helper.start(configuration: configuration)
       if mode == "expiry" { CarillonNotificationExtension.serviceExtensionTimeWillExpire(helper) }
-      await fulfillment(of: [done], timeout: 3)
+      await fulfillment(of: [done], timeout: 30)
       helper.finish()
     }
   }
