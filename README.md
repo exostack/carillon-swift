@@ -116,3 +116,17 @@ Regenerate only for an intentional protocol change, then update the other SDKs:
 ```sh
 CARILLON_WRITE_FIXTURES=1 swift test
 ```
+
+
+## Device identity
+
+```swift
+let id = Carillon.deviceId
+Carillon.onDeviceIdChanged = { id in print(id) }
+```
+
+The SDK persists a random installation secret and the last confirmed device ID.
+Token rotation reuses that ID when the server validates the proof. Reinstallation
+or merging with an existing token registration can change the ID; the callback
+fires on first registration and when the confirmed ID changes. The ID itself is
+not a credential. Never log or export the installation secret.

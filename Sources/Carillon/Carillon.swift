@@ -120,6 +120,15 @@ public enum Carillon {
     set { engine.setOnOpened(newValue) }
   }
 
+  /// The last confirmed registration ID, or nil before registration succeeds.
+  public static var deviceId: String? { engine.debugInfo().deviceId }
+
+  /// Fires after the first successful registration and whenever its ID changes.
+  public static var onDeviceIdChanged: ((String) -> Void)? {
+    get { engine.onDeviceIdChanged }
+    set { engine.onDeviceIdChanged = newValue }
+  }
+
   // MARK: - Support
 
   /// Returns SDK configuration, registration status, and queued-event count. Available in release builds.
