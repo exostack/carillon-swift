@@ -23,6 +23,6 @@ jobs:
       - name: Build and test on an iOS simulator
         run: |
           xcodebuild test \
-            -scheme Carillon \
+            -scheme Carillon-Package \
             -destination "id=${{ steps.simulator.outputs.udid }}" \
             -skipPackagePluginValidation
