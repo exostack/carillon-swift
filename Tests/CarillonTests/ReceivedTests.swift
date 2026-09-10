@@ -17,3 +17,18 @@ final class ReceivedTests: XCTestCase {
     XCTAssertNil(received.threadId)
   }
 }
+
+
+extension ReceivedTests {
+  func testSharedRichNotificationFixture() throws {
+    let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("ConformanceFixtures/notification.json")
+    let fixture = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+    var userInfo = fixture["data"] as! [String: Any]
+    userInfo["carillon"] = fixture["carillon"]
+    let received = ReceivedNotification(userInfo: userInfo, title: fixture["title"] as? String, body: fixture["body"] as? String)
+    XCTAssertEqual(received.deliveryId, "01937b1e-0000-7000-8000-0000000000ff")
+    XCTAssertEqual(received.image, "https://example.com/order.png")
+    XCTAssertEqual(received.threadId, "orders")
+    XCTAssertEqual(received.data["order_id"] as? String, "42")
+  }
+}
