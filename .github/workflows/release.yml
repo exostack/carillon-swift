@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tag matches Carillon.sdkVersion
+        run: |
+          if ! grep -q "public static let sdkVersion = \"$GITHUB_REF_NAME\"" Sources/Carillon/Carillon.swift; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Carillon.sdkVersion"
+            exit 1
+          fi
+      - run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
