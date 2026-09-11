@@ -32,17 +32,21 @@
       }
     }
 
-    /// Reads OS version and notification settings asynchronously.
-    /// Refreshing at launch picks up permission changes made in Settings.
-    @discardableResult
-    static func refreshEnvironmentFacts() async -> PushPermission {
-      let version = await MainActor.run { UIDevice.current.systemVersion }
-      let settings = await UNUserNotificationCenter.current().notificationSettings()
-      let permission = PushPermission(settings.authorizationStatus)
+    /// Opens the app's notification settings, where a person who answered the
+    /// prompt with no can change their mind. Nothing else can show the prompt again.
+    public static func openNotificationSettings() {
+      Task { @MainActor in
+        let path: String
+        if #available(iOS 16, *) {
+          path = UIApplication.openNotificationSettingsURLString
+        } else {
+          path = UIApplication.openSettingsURLString
+        }
 
-      engine.refreshOperatingSystem(osVersion: version, pushPermission: permission)
+        guard let url = URL(string: path) else { return }
 
-      return permission
+        UIApplication.shared.open(url)
+      }
     }
 
     /// Forward UNUserNotificationCenterDelegate.willPresent without swizzling.
@@ -51,14 +55,7 @@
       completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
       let content = notification.request.content
-      let received = ReceivedNotification(userInfo: content.userInfo, title: content.title, body: content.body)
-      let decision = onReceived?(received) ?? .show
-      completionHandler(decision == .show ? [.banner, .list, .sound, .badge] : [])
-    }
-
-    /// Removes notifications currently displayed by this app.
-    public static func clearNotifications() {
-      UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+      completionHandler(willPresent(userInfo: content.userInfo, title: content.title, body: content.body))
     }
 
     /// Forward application(_:didFailToRegisterForRemoteNotificationsWithError:).

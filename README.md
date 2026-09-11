@@ -53,6 +53,21 @@ func userNotificationCenter(_ center: UNUserNotificationCenter,
 Pass the APNs token as `Data`; the SDK encodes it. The SDK does not install these
 callbacks automatically.
 
+If another library owns `UNUserNotificationCenter.current().delegate`, forward
+the payload it hands you instead:
+
+```swift
+Carillon.didOpen(userInfo: response.notification.request.content.userInfo)
+
+let options = Carillon.willPresent(userInfo: notification.request.content.userInfo)
+```
+
+`didOpen(userInfo:)` queues the open exactly as `didOpen(_:)` does.
+`willPresent(userInfo:)` runs `onReceived` and returns the presentation options
+to pass to the system's completion handler. Both accept any payload: one without
+a Carillon stamp is ignored by the first and reaches `onReceived` with
+`deliveryId == nil` through the second.
+
 ## Request permission
 
 ```swift
@@ -62,6 +77,20 @@ let permission = await Carillon.requestPermission()
 Requests alert, badge, and sound authorization. Returns the current permission
 and syncs it to Carillon. Registration and notification display permission are
 separate: `configure` does not display this prompt.
+
+```swift
+let current = await Carillon.getPermission()
+if await Carillon.canRequestPermission() {
+  await Carillon.requestPermission()
+} else if current == .denied {
+  Carillon.openNotificationSettings()
+}
+```
+
+`getPermission()` reads the current permission without prompting and syncs it
+to Carillon. `canRequestPermission()` is true only while the prompt has never
+been shown; iOS shows it once, so after a refusal the only way back is the app's
+notification settings, which `openNotificationSettings()` opens.
 
 ## Update the device
 
@@ -126,10 +155,21 @@ Carillon.onDeviceIdChanged = { id in print(id) }
 ```
 
 The SDK persists a random installation secret and the last confirmed device ID.
-Token rotation reuses that ID when the server validates the proof. Reinstallation
-or merging with an existing token registration can change the ID; the callback
-fires on first registration and when the confirmed ID changes. The ID itself is
-not a credential. Never log or export the installation secret.
+Token rotation reuses that ID when the server validates the proof. Merging with
+an existing token registration can change the ID. The callback fires on first
+registration and when the confirmed ID changes; a handler set while an ID is
+already known is called once with it, so subscribing after registration
+completed still delivers it. The ID itself is not a credential. Never log or
+export the installation secret.
+
+The secret and the device ID are stored in the Keychain with
+`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. Device state, the last
+registered fingerprint and queued events stay in `UserDefaults`. A backup
+restored onto another device therefore carries the state but not the identity:
+the restored app generates a new secret and registers as a new device, and the
+original device keeps its row. An install upgraded from a version that kept the
+secret in `UserDefaults` moves it to the Keychain on first run and keeps its
+identity.
 
 ## Foreground notifications
 
@@ -156,8 +196,15 @@ without a Carillon stamp reaches the handler with `deliveryId == nil`.
 
 ## Notification images
 
-Add a Notification Service Extension target in Xcode with bundle ID
-`<your bundle ID>.CarillonNotificationExtension`. Add the Swift package's
+The server sets `mutable-content: 1` on every notification that carries an
+`image`, which is what routes it through a service extension. A raw `apns`
+override that replaces `aps` wholesale replaces that flag too, and the image is
+not attached; keep `mutable-content: 1` in the override or leave `aps` to the
+server.
+
+Add a Notification Service Extension target in Xcode. A bundle ID ending in
+`.CarillonNotificationExtension` is a convention, not a requirement: any
+extension bundle ID works. Add the Swift package's
 `CarillonNotificationExtension` product to that target, then use:
 
 ```swift

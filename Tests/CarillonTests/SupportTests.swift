@@ -127,7 +127,7 @@ final class StoreTests: XCTestCase {
   }
 
   func testRoundTripsTheWholeStateThroughTheContainer() throws {
-    let store = UserDefaultsStore(defaults: try defaults())
+    let store = UserDefaultsStore(defaults: try defaults(), keychain: MemoryKeychain())
     var state = fullState()
     state.tags = ["plan": "pro", "seats": 5, "beta": true, "ratio": 1.5]
 
@@ -147,7 +147,7 @@ final class StoreTests: XCTestCase {
   func testKeepsABooleanTagABoolean() throws {
     // A tag that went in as `true` and comes back as `1` is an audience filter
     // that silently stops matching.
-    let store = UserDefaultsStore(defaults: try defaults())
+    let store = UserDefaultsStore(defaults: try defaults(), keychain: MemoryKeychain())
     var state = DeviceState()
     state.tags = ["beta": true, "seats": 1]
     store.state = state
@@ -161,12 +161,93 @@ final class StoreTests: XCTestCase {
     // registration, and a queue that cannot be read could never be sent either.
     let suite = try defaults()
     suite.set(Data("not json".utf8), forKey: "dev.carillon.state")
-    let store = UserDefaultsStore(defaults: suite)
+    let store = UserDefaultsStore(defaults: suite, keychain: MemoryKeychain())
 
     XCTAssertNil(store.state)
     XCTAssertTrue(store.events.isEmpty)
   }
 
+  func testKeepsTheIdentityInTheKeychainAndNothingElse() throws {
+    let suite = try defaults()
+    let keychain = MemoryKeychain()
+    let store = UserDefaultsStore(defaults: suite, keychain: keychain)
+
+    store.installationSecret = "secret"
+    store.deviceId = "01937b1e-0000-7000-8000-000000000001"
+    store.registeredFingerprint = "fingerprint"
+
+    XCTAssertEqual(keychain.read("dev.carillon.installationSecret"), "secret")
+    XCTAssertEqual(keychain.read("dev.carillon.deviceId"), "01937b1e-0000-7000-8000-000000000001")
+    XCTAssertNil(suite.string(forKey: "dev.carillon.installationSecret"))
+    XCTAssertNil(suite.string(forKey: "dev.carillon.deviceId"))
+    XCTAssertEqual(suite.string(forKey: "dev.carillon.fingerprint"), "fingerprint")
+  }
+
+  func testAFreshEngineGeneratesASecretAndTheNextOneReusesIt() throws {
+    let suite = try defaults()
+    let keychain = MemoryKeychain()
+
+    let first = makeEngine(store: UserDefaultsStore(defaults: suite, keychain: keychain))
+    let secret = keychain.read("dev.carillon.installationSecret")
+    XCTAssertEqual(secret?.count, 43)
+    XCTAssertNil(first.debugInfo().deviceId)
+
+    _ = makeEngine(store: UserDefaultsStore(defaults: suite, keychain: keychain))
+    XCTAssertEqual(keychain.read("dev.carillon.installationSecret"), secret)
+  }
+
+  func testMovesAnIdentityLeftInTheDefaultsIntoTheKeychainOnce() throws {
+    // An install upgraded from a version that kept both in `UserDefaults` must
+    // wake up as the same device.
+    let suite = try defaults()
+    suite.set("legacy-secret", forKey: "dev.carillon.installationSecret")
+    suite.set("legacy-id", forKey: "dev.carillon.deviceId")
+    let keychain = MemoryKeychain()
+
+    let store = UserDefaultsStore(defaults: suite, keychain: keychain)
+
+    XCTAssertEqual(store.installationSecret, "legacy-secret")
+    XCTAssertEqual(store.deviceId, "legacy-id")
+    XCTAssertNil(suite.string(forKey: "dev.carillon.installationSecret"))
+    XCTAssertNil(suite.string(forKey: "dev.carillon.deviceId"))
+
+    let engine = makeEngine(store: store)
+    XCTAssertEqual(engine.debugInfo().deviceId, "legacy-id")
+    XCTAssertEqual(keychain.read("dev.carillon.installationSecret"), "legacy-secret")
+  }
+
+  func testTheKeychainWinsOverStaleDefaults() throws {
+    let suite = try defaults()
+    suite.set("older-secret", forKey: "dev.carillon.installationSecret")
+    let keychain = MemoryKeychain()
+    keychain.write("current-secret", account: "dev.carillon.installationSecret")
+
+    let store = UserDefaultsStore(defaults: suite, keychain: keychain)
+
+    XCTAssertEqual(store.installationSecret, "current-secret")
+    XCTAssertNil(suite.string(forKey: "dev.carillon.installationSecret"))
+  }
+
+  func testARestoreOntoAnotherDeviceStartsWithoutAnIdentity() throws {
+    // The defaults travel with a backup; the Keychain items, ThisDeviceOnly, do
+    // not. The restored handset keeps its state and gets a secret of its own.
+    let suite = try defaults()
+    let original = UserDefaultsStore(defaults: suite, keychain: MemoryKeychain())
+    let engine = makeEngine(store: original)
+    engine.identify("user-42")
+    original.deviceId = "01937b1e-0000-7000-8000-000000000001"
+    original.registeredFingerprint = "fingerprint"
+
+    let restored = UserDefaultsStore(defaults: suite, keychain: MemoryKeychain())
+    XCTAssertNil(restored.installationSecret)
+    XCTAssertNil(restored.deviceId)
+
+    let second = makeEngine(store: restored)
+    XCTAssertNotEqual(restored.installationSecret, original.installationSecret)
+    XCTAssertNil(second.debugInfo().deviceId)
+    XCTAssertNil(restored.registeredFingerprint)
+    XCTAssertEqual(second.currentState.externalId, "user-42")
+  }
   func testFingerprintIgnoresTheOrderADictionaryHappensToHave() {
     // Compared as a serialised body, with sorted keys. A dictionary that
     // serialised differently on the next launch would make every cold start look
@@ -200,5 +281,28 @@ final class StoreTests: XCTestCase {
     state.pushPermission = .denied
 
     XCTAssertNotEqual(before, state.fingerprint())
+  }
+}
+
+final class LocaleTagTests: XCTestCase {
+  func testLanguageAndRegion() {
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "fr_FR")), "fr-FR")
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "en")), "en")
+  }
+
+  func testDropsARegionOverride() {
+    // A person whose language is British English and whose region is set to the
+    // United States is still to be addressed in British English.
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "en_GB@rg=uszzzz")), "en-GB")
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "pt_BR@rg=ptzzzz;calendar=gregorian")), "pt-BR")
+  }
+
+  func testDropsACalendarOverride() {
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "th_TH@calendar=buddhist")), "th-TH")
+  }
+
+  func testKeepsAScriptOnlyWhereItDisambiguates() {
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "sr_Latn_RS")), "sr-Latn-RS")
+    XCTAssertEqual(Carillon.localeTag(Locale(identifier: "zh_Hant_TW")), "zh-TW")
   }
 }

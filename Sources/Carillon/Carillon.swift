@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(UIKit)
+  import UIKit
+#endif
+
 /// Carillon iOS SDK. Configure at app startup and forward APNs registration
 /// and notification-open callbacks. See the README for setup.
 public enum Carillon {
@@ -22,7 +26,7 @@ public enum Carillon {
 
     let endpoint = URL(string: defaultEndpoint)!
     let engine = Engine(
-      store: UserDefaultsStore(),
+      store: UserDefaultsStore(keychain: SystemKeychain()),
       transport: URLSessionTransport(endpoint: endpoint),
       clock: SystemClock(),
       environment: ProvisioningProfile.environment()
@@ -120,10 +124,18 @@ public enum Carillon {
     set { engine.setOnOpened(newValue) }
   }
 
+  /// Records an open from a notification payload. Queues an open for the payload
+  /// delivery id and ignores payloads without one. For hosts whose
+  /// notification-center delegate belongs to another library.
+  public static func didOpen(userInfo: [AnyHashable: Any]) {
+    engine.didOpen(userInfo: userInfo)
+  }
+
   /// The last confirmed registration ID, or nil before registration succeeds.
   public static var deviceId: String? { engine.debugInfo().deviceId }
 
   /// Fires after the first successful registration and whenever its ID changes.
+  /// A handler set while an ID is already known is called once with it.
   public static var onDeviceIdChanged: ((String) -> Void)? {
     get { engine.onDeviceIdChanged }
     set { engine.onDeviceIdChanged = newValue }
@@ -146,7 +158,7 @@ public enum Carillon {
   static func refreshAttributes(bundle: Bundle = .main) {
     engine.refreshDeviceAttributes(
       timezoneId: TimeZone.current.identifier,
-      locale: Locale.current.identifier.replacingOccurrences(of: "_", with: "-"),
+      locale: localeTag(),
       appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
       // The build behind that version. Two TestFlight uploads of "2.1.0" are one
       // app_version and two builds, and the build is the one that identifies
@@ -173,6 +185,36 @@ public enum Carillon {
       engine.setEnvironment(.sandbox)
     #else
       engine.setEnvironment(ProvisioningProfile.environment(in: bundle))
+    #endif
+  }
+
+  /// A BCP 47 tag of language, script where it disambiguates, and region.
+  ///
+  /// The raw identifier carries `@rg=` and `@calendar=` overrides when a person
+  /// has set a region or calendar apart from their language, and a tag with
+  /// those in it matches no localisation. `Locale.region` answers the `rg`
+  /// override, so the region is the language's own.
+  static func localeTag(_ locale: Locale = .current) -> String {
+    if #available(iOS 16, macOS 13, *), let code = locale.language.languageCode?.identifier {
+      let minimal = Locale.Language.Components(identifier: locale.language.minimalIdentifier)
+
+      return [code, minimal.script?.identifier, locale.language.region?.identifier]
+        .compactMap { $0 }
+        .joined(separator: "-")
+    }
+
+    return locale.identifier
+      .prefix { $0 != "@" }
+      .split(separator: "_")
+      .prefix(3)
+      .joined(separator: "-")
+  }
+
+  static func currentOSVersion() async -> String? {
+    #if canImport(UIKit)
+      return await MainActor.run { UIDevice.current.systemVersion }
+    #else
+      return nil
     #endif
   }
 }

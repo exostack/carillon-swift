@@ -2,16 +2,17 @@ import Foundation
 
 /// What survives the app being killed.
 ///
-/// `UserDefaults`, in the app container, and deliberately not the Keychain. The
-/// Keychain survives a reinstall, and everything here describes an install: a
-/// device id and a push token that Apple has already reissued to nobody. Waking
-/// up holding them would mean reporting events against a device row that belongs
-/// to a handset state that no longer exists.
+/// Split by what each fact describes. `UserDefaults` holds what describes an
+/// install — state, token, fingerprint, queued events — and travels with a
+/// backup. The Keychain, `ThisDeviceOnly`, holds what identifies the installation
+/// to the server — the secret and the device id — and never leaves the handset:
+/// a backup restored onto another device must not inherit an identity and take
+/// over its row.
 protocol Store: AnyObject {
   var state: DeviceState? { get set }
-  /// The id the server returned. Kept for `debugInfo()`, which is the first
-  /// thing support asks for and the only place it is ever needed.
+  /// The proof of identity sent with every registration. Device-bound.
   var installationSecret: String? { get set }
+  /// The id the server returned. Device-bound, and what `deviceId` answers.
   var deviceId: String? { get set }
   /// The fingerprint of the state the server has confirmed. What makes a second
   /// launch with nothing changed cost no call at all.
@@ -57,11 +58,16 @@ enum ISO8601 {
 
 final class UserDefaultsStore: Store {
   private let defaults: UserDefaults
+  private let keychain: Keychain
   private let prefix: String
 
-  init(defaults: UserDefaults = .standard, prefix: String = "dev.carillon.") {
+  init(defaults: UserDefaults = .standard, keychain: Keychain, prefix: String = "dev.carillon.") {
     self.defaults = defaults
+    self.keychain = keychain
     self.prefix = prefix
+
+    moveToKeychain("installationSecret")
+    moveToKeychain("deviceId")
   }
 
   var state: DeviceState? {
@@ -70,13 +76,13 @@ final class UserDefaultsStore: Store {
   }
 
   var installationSecret: String? {
-    get { defaults.string(forKey: prefix + "installationSecret") }
-    set { defaults.set(newValue, forKey: prefix + "installationSecret") }
+    get { keychain.read(prefix + "installationSecret") }
+    set { keychain.write(newValue, account: prefix + "installationSecret") }
   }
 
   var deviceId: String? {
-    get { defaults.string(forKey: prefix + "deviceId") }
-    set { defaults.set(newValue, forKey: prefix + "deviceId") }
+    get { keychain.read(prefix + "deviceId") }
+    set { keychain.write(newValue, account: prefix + "deviceId") }
   }
 
   var registeredFingerprint: String? {
@@ -87,6 +93,16 @@ final class UserDefaultsStore: Store {
   var events: [QueuedEvent] {
     get { read("events") ?? [] }
     set { write(newValue, "events") }
+  }
+
+  /// An install upgraded from a version that kept these in `UserDefaults` keeps
+  /// its identity. The Keychain wins where both hold a value, and the defaults
+  /// entry is dropped only once the Keychain is known to hold one.
+  private func moveToKeychain(_ name: String) {
+    guard let legacy = defaults.string(forKey: prefix + name) else { return }
+
+    if keychain.read(prefix + name) == nil { keychain.write(legacy, account: prefix + name) }
+    if keychain.read(prefix + name) != nil { defaults.removeObject(forKey: prefix + name) }
   }
 
   private func read<T: Decodable>(_ key: String) -> T? {

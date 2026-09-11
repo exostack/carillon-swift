@@ -31,19 +31,19 @@ public final class CarillonNotificationExtension: NSObject, URLSessionDataDelega
     self.completion = completion
   }
 
-  func start(configuration: URLSessionConfiguration) {
+  func start(configuration: URLSessionConfiguration, timeout budget: TimeInterval = 20) {
     guard let stamp = original.userInfo["carillon"] as? [String: Any],
       let image = stamp["image"] as? String,
       let url = URL(string: image), url.scheme?.lowercased() == "https"
     else { finish(); return }
     sourceURL = url
-    configuration.timeoutIntervalForRequest = 20
-    configuration.timeoutIntervalForResource = 20
+    configuration.timeoutIntervalForRequest = budget
+    configuration.timeoutIntervalForResource = budget
     let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     self.session = session
     let timeout = DispatchWorkItem { [weak self] in self?.finish() }
     self.timeout = timeout
-    DispatchQueue.global().asyncAfter(deadline: .now() + 20, execute: timeout)
+    DispatchQueue.global().asyncAfter(deadline: .now() + budget, execute: timeout)
     session.dataTask(with: url).resume()
   }
 

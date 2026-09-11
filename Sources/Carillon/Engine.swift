@@ -307,9 +307,19 @@ final class Engine {
   }
 
   private var deviceIdHandler: ((String) -> Void)?
+  /// A handler attached after registration completed is told the id it missed,
+  /// once — the same pattern held opens follow.
   var onDeviceIdChanged: ((String) -> Void)? {
     get { lock.withLock { deviceIdHandler } }
-    set { lock.withLock { deviceIdHandler = newValue } }
+    set {
+      let known = lock.withLock { () -> String? in
+        deviceIdHandler = newValue
+
+        return store.deviceId
+      }
+
+      if let newValue, let known { newValue(known) }
+    }
   }
 
   private func recordRegistration(fingerprint: String, response: Data, debug: Bool) {

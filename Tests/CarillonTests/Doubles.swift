@@ -161,3 +161,13 @@ func makeEngine(
     environment: .sandbox
   )
 }
+
+/// The device-bound container, in memory. A test that needs "another device"
+/// hands the same defaults to a store built on a fresh one of these.
+final class MemoryKeychain: Keychain {
+  private var items: [String: String] = [:]
+
+  func read(_ account: String) -> String? { items[account] }
+
+  func write(_ value: String?, account: String) { items[account] = value }
+}

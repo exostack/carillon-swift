@@ -31,6 +31,29 @@ final class RegistrationTests: XCTestCase {
     XCTAssertEqual(store.installationSecret, proof)
   }
 
+  func testReplaysAKnownDeviceIDToAHandlerAttachedLate() async {
+    // An app that subscribes after registration completed still hears the id,
+    // once — a handler set before any id is known hears nothing until one is.
+    let transport = FakeTransport([
+      .response(status: 200, body: Data("{\"id\":\"first\"}".utf8))
+    ])
+    let engine = makeEngine(transport: transport)
+    var early: [String] = []
+    engine.onDeviceIdChanged = { early.append($0) }
+    XCTAssertEqual(early, [])
+    engine.onDeviceIdChanged = nil
+
+    engine.setToken("first-token")
+    await engine.settle()
+
+    var late: [String] = []
+    engine.onDeviceIdChanged = { late.append($0) }
+    await engine.settle()
+
+    XCTAssertEqual(early, [])
+    XCTAssertEqual(late, ["first"])
+  }
+
   func testSendsTheWholeTableAsTheServerDefinesIt() async {
     let transport = FakeTransport()
     let engine = makeEngine(transport: transport)

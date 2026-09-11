@@ -119,4 +119,25 @@ extension ExtensionTests {
       helper.finish()
     }
   }
+
+  func testADownloadThatNeverAnswersTimesOutToTheOriginalContent() async {
+    ImageProtocol.reply = { _ in }
+    let done = expectation(description: "timed out")
+    let content = UNMutableNotificationContent()
+    content.title = "Original"
+    content.userInfo = ["carillon": ["image": "https://example.com/slow.png"]]
+    var calls = 0
+    let helper = CarillonNotificationExtension(content: content) { result in
+      calls += 1
+      XCTAssertEqual(result.title, "Original")
+      XCTAssertTrue(result.attachments.isEmpty)
+      done.fulfill()
+    }
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [ImageProtocol.self]
+    helper.start(configuration: configuration, timeout: 0.2)
+    await fulfillment(of: [done], timeout: 30)
+    helper.finish()
+    XCTAssertEqual(calls, 1)
+  }
 }
