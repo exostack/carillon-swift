@@ -47,6 +47,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = SOURCE_ROOT; };
 		24AF591916134F6CB85BE8F0 /* NotificationService.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = NotificationService.swift; path = CarillonNotificationExtension/NotificationService.swift; sourceTree = "<group>"; };
 		306056E03029117900596F38 /* CarillonExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarillonExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4433053986CF4C5B9BD301DE /* CarillonNotificationExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = undefined; name = CarillonNotificationExtension.appex; path = CarillonNotificationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -113,6 +114,7 @@
 		306056D73029117900596F38 = {
 			isa = PBXGroup;
 			children = (
+				B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */,
 				306056E23029117900596F38 /* CarillonExample */,
 				306056E13029117900596F38 /* Products */,
 				1D3A45B26398479F98DAEBCC /* CarillonNotificationExtension */,
@@ -184,6 +186,7 @@
 				85CA2AE67C2041639CF37774 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */,
 				306056E23029117900596F38 /* CarillonExample */,
 			);
 			name = CarillonExample;
@@ -312,6 +315,7 @@
 /* Begin XCBuildConfiguration section */
 		0B724EEA789AA78C79EF9A23 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -327,6 +331,7 @@
 		};
 		0B7FFE36C9664ABFBD083FEE /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -351,6 +356,7 @@
 		};
 		306056E93029117900596F38 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -412,6 +418,7 @@
 		};
 		306056EA3029117900596F38 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -465,6 +472,7 @@
 		};
 		306056EC3029117900596F38 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -509,6 +517,7 @@
 		};
 		306056ED3029117900596F38 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -553,6 +562,7 @@
 		};
 		7BA758E3A2FA51D8313BE571 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -567,6 +577,7 @@
 		};
 		B82E61BCFE1548AF9851FF0D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B4DE92A7B44E4892B8D3F105 /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CURRENT_PROJECT_VERSION = 1;

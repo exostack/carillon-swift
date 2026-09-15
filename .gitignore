@@ -3,3 +3,4 @@
 xcuserdata/
 DerivedData/
 Example/**/xcuserdata/
+Example/CarillonExample/Signing.local.xcconfig
