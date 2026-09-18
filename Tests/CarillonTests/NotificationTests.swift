@@ -30,6 +30,18 @@ final class NotificationTests: XCTestCase {
     "order": "42",
   ]
 
+  func testStructuredCustomDataPreservesObjectsArraysAndJsonStrings() {
+    let order: [String: Any] = ["items": [true, NSNull(), ["name": "é"]] as [Any]]
+    let payload: [AnyHashable: Any] = [
+      "aps": ["alert": "Hi"], "carillon": ["delivery_id": "delivery"],
+      "order": order, "literal": "{\"id\":1}",
+    ]
+    let notification = ReceivedNotification(userInfo: payload, title: "Hi", body: nil)
+    XCTAssertEqual(notification.data["order"] as? NSDictionary, order as NSDictionary)
+    XCTAssertEqual(notification.data["literal"] as? String, "{\"id\":1}")
+    XCTAssertNil(notification.data["carillon"])
+  }
+
   func testSuppressHandsBackNoPresentationOptions() {
     Carillon.onReceived = { _ in .suppress }
 
