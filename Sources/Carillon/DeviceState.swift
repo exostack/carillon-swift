@@ -36,17 +36,14 @@ extension TagValue: ExpressibleByBooleanLiteral {
 
 /// Everything the server is told about this device.
 ///
-/// One value, held whole, sent whole. The protocol makes the SDK the canonical
-/// holder of this state and the registration call a replacement rather than a
-/// patch — which is what makes re-registration free, and what makes an app that
-/// has been offline for a week correct again with one call rather than several.
+/// Device attributes are snapshots; tags hold only unacknowledged per-key changes.
 struct DeviceState: Equatable, Codable {
   /// Absent until APNs hands one over. Nothing is sent before it exists: a
   /// registration without a token names no device.
   var token: String?
   var environment: PushEnvironment = .production
   var externalId: String?
-  var tags: [String: TagValue] = [:]
+  var tags: [String: TagValue?] = [:]
   var timezoneId: String?
   var locale: String?
   var appVersion: String?
@@ -67,8 +64,8 @@ struct DeviceState: Equatable, Codable {
   ///
   /// Every field is present on every call, including the null ones, and that is
   /// deliberate on both sides: the server reads an absent field as "unchanged"
-  /// and an explicit null as "erase". Since this SDK holds the whole truth about
-  /// the device, sending the whole truth is the only description that stays
+  /// and an explicit null as "erase". Except for pending tag changes, the SDK holds the state of
+  /// the device, so sending its snapshot stays
   /// correct — `clearIdentity()` has to reach the server as a null, and it can
   /// only do that if nulls are sent.
   func registrationBody() -> [String: Any] {
@@ -77,7 +74,7 @@ struct DeviceState: Equatable, Codable {
       "platform": DeviceState.platform,
       "environment": environment.rawValue,
       "external_id": externalId ?? NSNull(),
-      "tags": tags.mapValues(\.json),
+      "tags": tags.mapValues { $0?.json ?? NSNull() },
       "timezone_id": timezoneId ?? NSNull(),
       "locale": locale ?? NSNull(),
       "app_version": appVersion ?? NSNull(),

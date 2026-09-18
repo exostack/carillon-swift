@@ -8,7 +8,7 @@ import Foundation
 /// and notification-open callbacks. See the README for setup.
 public enum Carillon {
   /// The SDK version reported at registration.
-  public static let sdkVersion = "0.2.1"
+  public static let sdkVersion = "0.3.0"
 
   /// Default API endpoint. Override for staging or local development.
   public static let defaultEndpoint = "https://api.carillon.dev"
@@ -92,9 +92,17 @@ public enum Carillon {
     engine.identify(nil)
   }
 
-  /// Replaces all device tags. Omitted tags are removed.
-  public static func setTags(_ tags: [String: TagValue]) {
+  /// Merges supplied tags. Nil removes a key; omitted keys are unchanged.
+  public static func setTags(_ tags: [String: TagValue?]) {
     engine.setTags(tags)
+  }
+
+  public static func setTag(_ name: String, _ value: TagValue) {
+    setTags([name: value])
+  }
+
+  public static func removeTag(_ name: String) {
+    setTags([name: nil])
   }
 
   /// Sets opted_in to true and syncs it to the server. Does not change OS permission.

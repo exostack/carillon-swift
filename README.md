@@ -97,12 +97,15 @@ notification settings, which `openNotificationSettings()` opens.
 ```swift
 Carillon.identify("user-42")
 Carillon.setTags(["plan": "pro", "seats": 12])
+Carillon.setTag("language", "fr")
+Carillon.setTags(["seats": nil])
+Carillon.removeTag("language")
 Carillon.clearIdentity()
 Carillon.optOut()
 Carillon.optIn()
 ```
 
-Tags replace the entire map. Clearing identity keeps the device registered.
+Tags merge with existing keys, including tags written by your backend. Use `setTag` to update one key and `removeTag` to delete one. In `setTags`, a null value (`nil` in Swift) removes that key; omitted keys are preserved. Clearing identity keeps the device registered.
 Opt-in changes sync to the server and do not change OS permission.
 
 ## Handle opens

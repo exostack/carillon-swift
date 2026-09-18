@@ -97,11 +97,8 @@ final class Engine {
     mutate { $0.externalId = externalId }
   }
 
-  func setTags(_ tags: [String: TagValue]) {
-    // Replaced whole, never merged. The SDK holds the canonical map and the
-    // server replaces what it holds — a merge here would make removing a tag
-    // impossible without inventing a word for "remove".
-    mutate { $0.tags = tags }
+  func setTags(_ tags: [String: TagValue?]) {
+    mutate { $0.tags.merge(tags) { _, latest in latest } }
   }
 
   func setOptedIn(_ optedIn: Bool) {
@@ -233,7 +230,7 @@ final class Engine {
       switch Verdict(await transport.send(request)) {
       case let .accepted(response):
         failures = 0
-        recordRegistration(fingerprint: fingerprint, response: response, debug: debug)
+        recordRegistration(snapshot: snapshot, response: response, debug: debug)
 
       case let .retry(reason):
         failures += 1
@@ -322,7 +319,7 @@ final class Engine {
     }
   }
 
-  private func recordRegistration(fingerprint: String, response: Data, debug: Bool) {
+  private func recordRegistration(snapshot: DeviceState, response: Data, debug: Bool) {
     // The server names the device it created. Kept for `debugInfo()`, which is
     // the first thing support asks for — and read leniently, because a
     // registration that succeeded must not be undone by a response shape.
@@ -331,7 +328,13 @@ final class Engine {
 
     let handler = lock.withLock { () -> ((String) -> Void)? in
       let changed = id != nil && id != store.deviceId
-      store.registeredFingerprint = fingerprint
+      state.tags = state.tags.filter { key, value in
+        !snapshot.tags.keys.contains(key) || snapshot.tags[key]! != value
+      }
+      store.state = state
+      var acknowledged = snapshot
+      acknowledged.tags = [:]
+      store.registeredFingerprint = acknowledged.fingerprint()
       refusedFingerprint = nil
       if let id { store.deviceId = id }
       lastRegistrationAt = clock.now

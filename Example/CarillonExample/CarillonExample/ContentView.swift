@@ -175,9 +175,6 @@ struct ContentView: View {
           .disableAutocorrection(true)
       }
 
-      // One pair at a time, sent as the whole map. The SDK replaces rather than
-      // merges, which the bench shows honestly rather than papering over by
-      // accumulating pairs locally.
       Button("setTags()") {
         Carillon.setTags([tagName: .string(tagValue)])
         bench.log("setTags([\(tagName): \(tagValue)])")
@@ -185,9 +182,9 @@ struct ContentView: View {
       }
       .disabled(tagName.isEmpty)
 
-      Button("setTags([:])") {
-        Carillon.setTags([:])
-        bench.log("setTags([:])")
+      Button("removeTag()") {
+        Carillon.removeTag(tagName)
+        bench.log("removeTag(\(tagName))")
         bench.refresh()
       }
     }

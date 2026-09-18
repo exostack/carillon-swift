@@ -5,6 +5,57 @@ import XCTest
 /// Registration is the call the whole product depends on: a device that never
 /// registers receives nothing, and the failure is invisible from the app.
 final class RegistrationTests: XCTestCase {
+  func testRetriesTagRemovalUntilAcknowledged() async {
+    let transport = FakeTransport([.failure("offline")])
+    let engine = makeEngine(transport: transport)
+    engine.setTags(["gone": nil])
+    engine.setToken("tag-token")
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    for body in transport.bodies {
+      XCTAssertTrue((body["tags"] as! [String: Any])["gone"] is NSNull)
+    }
+    XCTAssertTrue(engine.currentState.tags.isEmpty)
+  }
+
+  func testMergesPendingTagsAndDoesNotReplayAcknowledgedTags() async {
+    let store = MemoryStore()
+    let transport = FakeTransport()
+    let engine = makeEngine(transport: transport, store: store)
+    engine.setTags(["plan": "pro", "keep": true])
+    engine.setTags(["plan": nil, "count": 2])
+    let restored = makeEngine(transport: transport, store: store)
+    restored.setToken("tag-token")
+    await restored.settle()
+    let tags = transport.bodies[0]["tags"] as! [String: Any]
+    XCTAssertTrue(tags["plan"] is NSNull)
+    XCTAssertEqual(tags["keep"] as? Bool, true)
+    XCTAssertEqual(tags["count"] as? Int, 2)
+    XCTAssertTrue(restored.currentState.tags.isEmpty)
+    restored.identify("server-tags-must-survive")
+    await restored.settle()
+    XCTAssertTrue((transport.bodies.last?["tags"] as! [String: Any]).isEmpty)
+  }
+
+  func testPreservesTagChangesMadeDuringUpload() async {
+    let gate = Gate()
+    let transport = FakeTransport()
+    transport.beforeSend = { index in if index == 0 { await gate.wait() } }
+    let engine = makeEngine(transport: transport)
+    engine.setTags(["plan": "old", "remove": true])
+    engine.setToken("tag-token")
+    while transport.requests.isEmpty { await Task.yield() }
+    engine.setTags(["plan": "new", "remove": nil, "extra": true])
+    await gate.open()
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    let tags = transport.bodies[1]["tags"] as! [String: Any]
+    XCTAssertEqual(tags["plan"] as? String, "new")
+    XCTAssertTrue(tags["remove"] is NSNull)
+    XCTAssertEqual(tags["extra"] as? Bool, true)
+    XCTAssertTrue(engine.currentState.tags.isEmpty)
+  }
+
   func testPersistsProofAndReportsOnlyChangedDeviceIDs() async {
     let store = MemoryStore()
     let transport = FakeTransport([
@@ -302,7 +353,7 @@ final class RegistrationTests: XCTestCase {
 
     XCTAssertEqual(restored.currentState.externalId, "user-42")
     XCTAssertEqual(restored.currentState.token, String(repeating: "ab", count: 32))
-    XCTAssertEqual(restored.currentState.tags["plan"], .string("pro"))
+    XCTAssertTrue(restored.currentState.tags.isEmpty)
   }
 
   func testRetriesWhenThereIsNoAnswerAndBacksOff() async {
