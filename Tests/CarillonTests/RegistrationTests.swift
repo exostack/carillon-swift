@@ -5,6 +5,29 @@ import XCTest
 /// Registration is the call the whole product depends on: a device that never
 /// registers receives nothing, and the failure is invisible from the app.
 final class RegistrationTests: XCTestCase {
+  func testTypedTagsPersistAndPreserveChangesDuringUpload() async {
+    let store = MemoryStore()
+    let gate = Gate()
+    let transport = FakeTransport([.failure("offline")])
+    transport.beforeSend = { index in if index == 0 { await gate.wait() } }
+    let first = makeEngine(transport: transport, store: store)
+    first.setTypedTags("date_tags", ["same": "2026-10-01T12:00:00.000Z"])
+    first.setTypedTags("boolean_tags", ["same": false])
+    first.setTypedTags("number_tags", ["same": 12, "gone": nil])
+    let engine = makeEngine(transport: transport, store: store)
+    engine.setToken("typed-token")
+    while transport.requests.isEmpty { await Task.yield() }
+    engine.setTypedTags("number_tags", ["same": 13])
+    await gate.open()
+    await engine.settle()
+    XCTAssertEqual((transport.bodies.last?["number_tags"] as? [String: Any])?["same"] as? Int, 13)
+    XCTAssertEqual((transport.bodies[0]["boolean_tags"] as? [String: Any])?["same"] as? Bool, false)
+    XCTAssertTrue(engine.currentState.typedTags!.values.allSatisfy { $0.isEmpty })
+    engine.identify("another")
+    await engine.settle()
+    XCTAssertNil(transport.bodies.last?["number_tags"])
+  }
+
   func testRetriesTagRemovalUntilAcknowledged() async {
     let transport = FakeTransport([.failure("offline")])
     let engine = makeEngine(transport: transport)

@@ -8,7 +8,7 @@ import Foundation
 /// and notification-open callbacks. See the README for setup.
 public enum Carillon {
   /// The SDK version reported at registration.
-  public static let sdkVersion = "0.3.0"
+  public static let sdkVersion = "0.4.0"
 
   /// Default API endpoint. Override for staging or local development.
   public static let defaultEndpoint = "https://api.carillon.dev"
@@ -93,13 +93,33 @@ public enum Carillon {
   }
 
   /// Merges supplied tags. Nil removes a key; omitted keys are unchanged.
-  public static func setTags(_ tags: [String: TagValue?]) {
-    engine.setTags(tags)
+  public static func setTags(_ tags: [String: String?]) {
+    engine.setTags(tags.mapValues { $0.map(TagValue.string) })
   }
 
-  public static func setTag(_ name: String, _ value: TagValue) {
+  public static func setTag(_ name: String, _ value: String) {
     setTags([name: value])
   }
+
+  public static func setTagNumber(_ name: String, _ value: Double) {
+    precondition(value.isFinite, "Tag numbers must be finite")
+    engine.setTypedTags("number_tags", [name: .double(value)])
+  }
+
+  public static func setTagBoolean(_ name: String, _ value: Bool) {
+    engine.setTypedTags("boolean_tags", [name: .bool(value)])
+  }
+
+  public static func setTagDate(_ name: String, _ value: Date) {
+    precondition(value.timeIntervalSince1970.isFinite && value.timeIntervalSince1970 >= -62135596800 && value.timeIntervalSince1970 < 253402300800, "Tag dates must be valid ISO dates")
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    engine.setTypedTags("date_tags", [name: .string(formatter.string(from: value))])
+  }
+
+  public static func removeTagNumber(_ name: String) { engine.setTypedTags("number_tags", [name: nil]) }
+  public static func removeTagBoolean(_ name: String) { engine.setTypedTags("boolean_tags", [name: nil]) }
+  public static func removeTagDate(_ name: String) { engine.setTypedTags("date_tags", [name: nil]) }
 
   public static func removeTag(_ name: String) {
     setTags([name: nil])
