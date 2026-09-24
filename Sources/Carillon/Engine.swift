@@ -101,6 +101,16 @@ final class Engine {
     mutate { $0.tags.merge(tags) { _, latest in latest } }
   }
 
+  func setTypedTags(_ kind: String, _ tags: [String: TagValue?]) {
+    mutate {
+      var typed = $0.typedTags ?? [:]
+      var patch = typed[kind] ?? [:]
+      patch.merge(tags) { _, latest in latest }
+      typed[kind] = patch
+      $0.typedTags = typed
+    }
+  }
+
   func setOptedIn(_ optedIn: Bool) {
     mutate { $0.optedIn = optedIn }
   }
@@ -331,9 +341,16 @@ final class Engine {
       state.tags = state.tags.filter { key, value in
         !snapshot.tags.keys.contains(key) || snapshot.tags[key]! != value
       }
+      for (kind, patch) in state.typedTags ?? [:] {
+        let sent = snapshot.typedTags?[kind] ?? [:]
+        state.typedTags?[kind] = patch.filter { key, value in
+          !sent.keys.contains(key) || sent[key]! != value
+        }
+      }
       store.state = state
       var acknowledged = snapshot
       acknowledged.tags = [:]
+      acknowledged.typedTags = nil
       store.registeredFingerprint = acknowledged.fingerprint()
       refusedFingerprint = nil
       if let id { store.deviceId = id }

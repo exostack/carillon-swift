@@ -176,7 +176,7 @@ struct ContentView: View {
       }
 
       Button("setTags()") {
-        Carillon.setTags([tagName: .string(tagValue)])
+        Carillon.setTags([tagName: tagValue])
         bench.log("setTags([\(tagName): \(tagValue)])")
         bench.refresh()
       }

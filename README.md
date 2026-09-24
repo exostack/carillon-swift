@@ -96,9 +96,10 @@ notification settings, which `openNotificationSettings()` opens.
 
 ```swift
 Carillon.identify("user-42")
-Carillon.setTags(["plan": "pro", "seats": 12])
+Carillon.setTag("plan", "pro")
+Carillon.setTagNumber("seats", 12)
 Carillon.setTag("language", "fr")
-Carillon.setTags(["seats": nil])
+Carillon.removeTagNumber("seats")
 Carillon.removeTag("language")
 Carillon.clearIdentity()
 Carillon.optOut()
@@ -233,3 +234,18 @@ with a 20-second budget and a 10 MiB cap, and falls back to the original notific
 No App Group is required. Include the extension bundle ID in signing provisioning profiles,
 including Fastlane `match`. If the app already has a notification service extension,
 integrate the helper into that extension rather than embedding a second one.
+
+
+## Typed tags
+
+Use `setTag` for strings, `setTagNumber` for finite numbers, `setTagBoolean` for
+booleans, and `setTagDate` for native dates (Swift `Date`, Kotlin `java.util.Date`,
+JavaScript `Date`). Dates are serialized as UTC ISO timestamps. `setTags` accepts
+string values or null removals only.
+
+Each type has its own namespace: the same key may exist independently in several
+types. Remove values with `removeTag`, `removeTagNumber`, `removeTagBoolean`, or
+`removeTagDate`. Pending writes and removals survive restarts and retries.
+
+See the [tags guide](https://carillon.dev/docs/concepts/tags) for API formats,
+shared user profiles, audience filters, limits and examples.

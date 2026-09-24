@@ -44,6 +44,7 @@ struct DeviceState: Equatable, Codable {
   var environment: PushEnvironment = .production
   var externalId: String?
   var tags: [String: TagValue?] = [:]
+  var typedTags: [String: [String: TagValue?]]?
   var timezoneId: String?
   var locale: String?
   var appVersion: String?
@@ -69,7 +70,7 @@ struct DeviceState: Equatable, Codable {
   /// correct — `clearIdentity()` has to reach the server as a null, and it can
   /// only do that if nulls are sent.
   func registrationBody() -> [String: Any] {
-    [
+    var body: [String: Any] = [
       "token": token ?? "",
       "platform": DeviceState.platform,
       "environment": environment.rawValue,
@@ -85,6 +86,10 @@ struct DeviceState: Equatable, Codable {
       "sdk_version": sdkVersion ?? NSNull(),
       "opted_in": optedIn,
     ]
+    for (kind, patch) in typedTags ?? [:] where !patch.isEmpty {
+      body[kind] = patch.mapValues { $0?.json ?? NSNull() }
+    }
+    return body
   }
 
   /// What "the server already knows this" means.
