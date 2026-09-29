@@ -5,6 +5,47 @@ import XCTest
 /// Registration is the call the whole product depends on: a device that never
 /// registers receives nothing, and the failure is invisible from the app.
 final class RegistrationTests: XCTestCase {
+  func testKeyAndEndpointChangesRegisterUnchangedDevice() async {
+    let transport = FakeTransport()
+    let store = MemoryStore()
+    let engine = makeEngine(transport: transport, store: store)
+    engine.setToken("same-token")
+    await engine.settle()
+    engine.configure(
+      key: "rotated", endpoint: URL(string: Carillon.defaultEndpoint)!, debug: false, transport: nil
+    )
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    XCTAssertEqual(transport.requests.last?.key, "rotated")
+    engine.configure(
+      key: "rotated", endpoint: URL(string: Carillon.defaultEndpoint)!, debug: false, transport: nil
+    )
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    engine.configure(
+      key: "rotated", endpoint: URL(string: "https://another.example")!, debug: false,
+      transport: nil)
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 3)
+    XCTAssertFalse(store.registeredFingerprint!.contains("rotated"))
+  }
+
+  func testKeyChangeDuringRegistrationDoesNotAcknowledgeNewConfiguration() async {
+    let gate = Gate()
+    let transport = FakeTransport()
+    transport.beforeSend = { index in if index == 0 { await gate.wait() } }
+    let engine = makeEngine(transport: transport)
+    engine.setToken("same-token")
+    while transport.requests.isEmpty { await Task.yield() }
+    engine.configure(
+      key: "rotated", endpoint: URL(string: Carillon.defaultEndpoint)!, debug: false, transport: nil
+    )
+    await gate.open()
+    await engine.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    XCTAssertEqual(transport.requests.last?.key, "rotated")
+  }
+
   func testTypedTagsPersistAndPreserveChangesDuringUpload() async {
     let store = MemoryStore()
     let gate = Gate()

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// Everything the SDK actually does, with no platform in it.
@@ -199,17 +200,25 @@ final class Engine {
   /// because it is computed from it. It is also what makes a token that arrives
   /// before `configure` register the moment a key does: nothing was consumed
   /// while sending was impossible.
-  private func pendingRegistration() -> (DeviceState, String)? {
-    lock.withLock { () -> (DeviceState, String)? in
+  private func registrationFingerprint(_ state: DeviceState, key: String, endpoint: String)
+    -> String
+  {
+    let scope = SHA256.hash(data: Data("\(key)\n\(endpoint)".utf8))
+      .map { String(format: "%02x", $0) }.joined()
+    return scope + ":" + state.fingerprint()
+  }
+
+  private func pendingRegistration() -> (DeviceState, String, String, String, Transport)? {
+    lock.withLock { () -> (DeviceState, String, String, String, Transport)? in
       guard state.token != nil, !key.isEmpty else { return nil }
 
-      let fingerprint = state.fingerprint()
+      let fingerprint = registrationFingerprint(state, key: key, endpoint: endpointDescription)
 
       guard fingerprint != store.registeredFingerprint, fingerprint != refusedFingerprint else {
         return nil
       }
 
-      return (state, fingerprint)
+      return (state, fingerprint, key, endpointDescription, transport)
     }
   }
 
@@ -220,13 +229,13 @@ final class Engine {
       // A cold start with an unchanged device costs no call at all, which is what
       // makes "call register() on every launch" the cheap instruction the
       // documentation says it is.
-      guard let (snapshot, fingerprint) = pendingRegistration() else {
+      guard let (snapshot, fingerprint, key, endpoint, transport) = pendingRegistration() else {
         finishRegistrationLoop()
 
         return
       }
 
-      let (key, debug) = lock.withLock { (self.key, debugEnabled) }
+      let debug = lock.withLock { debugEnabled }
       var registration = snapshot.registrationBody()
       lock.withLock {
         registration["device_id"] = store.deviceId
@@ -238,11 +247,12 @@ final class Engine {
       Log.write(debug, "registering device")
 
       switch Verdict(await transport.send(request)) {
-      case let .accepted(response):
+      case .accepted(let response):
         failures = 0
-        recordRegistration(snapshot: snapshot, response: response, debug: debug)
+        recordRegistration(
+          snapshot: snapshot, key: key, endpoint: endpoint, response: response, debug: debug)
 
-      case let .retry(reason):
+      case .retry(let reason):
         failures += 1
         let delay = Backoff.delay(afterFailures: failures)
         Log.write(debug, "registration deferred (\(reason)); retrying in \(Int(delay))s")
@@ -256,7 +266,7 @@ final class Engine {
         // confirmed, so the next pass finds the same work waiting.
         await clock.sleep(delay)
 
-      case let .refused(problem, status):
+      case .refused(let problem, let status):
         // Refused for a reason time will not change: a malformed token, a key
         // that may not register a device. Retrying would be a loop the customer
         // pays for and never sees. The reason is kept verbatim, because the API
@@ -302,7 +312,7 @@ final class Engine {
   private func pendingWorkExists() -> Bool {
     guard state.token != nil, !key.isEmpty else { return false }
 
-    let fingerprint = state.fingerprint()
+    let fingerprint = registrationFingerprint(state, key: key, endpoint: endpointDescription)
 
     return fingerprint != store.registeredFingerprint && fingerprint != refusedFingerprint
   }
@@ -329,7 +339,9 @@ final class Engine {
     }
   }
 
-  private func recordRegistration(snapshot: DeviceState, response: Data, debug: Bool) {
+  private func recordRegistration(
+    snapshot: DeviceState, key: String, endpoint: String, response: Data, debug: Bool
+  ) {
     // The server names the device it created. Kept for `debugInfo()`, which is
     // the first thing support asks for — and read leniently, because a
     // registration that succeeded must not be undone by a response shape.
@@ -337,6 +349,7 @@ final class Engine {
     let id = object?["id"] as? String
 
     let handler = lock.withLock { () -> ((String) -> Void)? in
+      guard self.key == key, endpointDescription == endpoint else { return nil }
       let changed = id != nil && id != store.deviceId
       state.tags = state.tags.filter { key, value in
         !snapshot.tags.keys.contains(key) || snapshot.tags[key]! != value
@@ -351,7 +364,8 @@ final class Engine {
       var acknowledged = snapshot
       acknowledged.tags = [:]
       acknowledged.typedTags = nil
-      store.registeredFingerprint = acknowledged.fingerprint()
+      store.registeredFingerprint = registrationFingerprint(
+        acknowledged, key: key, endpoint: endpoint)
       refusedFingerprint = nil
       if let id { store.deviceId = id }
       lastRegistrationAt = clock.now
@@ -465,14 +479,14 @@ final class Engine {
         drop(batch)
         Log.write(debug, "reported \(batch.count) event(s)")
 
-      case let .retry(reason):
+      case .retry(let reason):
         failures += 1
         let delay = Backoff.delay(afterFailures: failures)
         Log.write(debug, "events deferred (\(reason)); retrying in \(Int(delay))s")
 
         await clock.sleep(delay)
 
-      case let .refused(problem, status):
+      case .refused(let problem, let status):
         // The batch will be just as invalid in five minutes. Dropped so the
         // queue cannot grow for the life of the install, and logged so the
         // reason is visible rather than inferred from opens that never appear.
