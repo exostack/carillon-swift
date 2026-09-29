@@ -249,3 +249,22 @@ types. Remove values with `removeTag`, `removeTagNumber`, `removeTagBoolean`, or
 
 See the [tags guide](https://carillon.dev/docs/concepts/tags) for API formats,
 shared user profiles, audience filters, limits and examples.
+
+## Changing the mobile key
+
+Calling `configure` with another key or API endpoint registers the current device
+again even when its token and attributes are unchanged. Repeating the same
+configuration does not cause another registration after a successful response.
+A key change during an in-flight request is followed by a registration using the
+new configuration. Version 0.4.1 includes this behavior.
+
+The device ID and installation proof survive reinstalls in this app's iOS
+Keychain. They do not grant access to another Carillon app: the server checks the
+app, key mode, platform and proof before reusing a device ID. If the previous ID
+belongs to another app, registration resolves the token inside the newly selected
+app and returns that app's device ID. It does not move or remove the previous
+app's device record. Switching back registers again.
+
+Use separate bundle identifiers for development and production installations
+that must coexist on a phone. Changing keys does not clear your application-set
+user identity or tags; update those explicitly when the signed-in user changes.
