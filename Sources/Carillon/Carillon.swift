@@ -160,6 +160,12 @@ public enum Carillon {
     engine.didOpen(userInfo: userInfo)
   }
 
+  /// Records receipt without changing presentation or invoking notification handlers.
+  /// Use when the notification-center delegate belongs to another library.
+  public static func didReceive(userInfo: [AnyHashable: Any]) {
+    engine.didReceive(userInfo: userInfo)
+  }
+
   /// The last confirmed registration ID, or nil before registration succeeds.
   public static var deviceId: String? { engine.debugInfo().deviceId }
 
