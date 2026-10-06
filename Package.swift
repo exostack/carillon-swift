@@ -13,9 +13,10 @@ let package = Package(
     .library(name: "CarillonNotificationExtension", targets: ["CarillonNotificationExtension"])
   ],
   targets: [
-    .target(name: "Carillon"),
-    .target(name: "CarillonNotificationExtension"),
+    .target(name: "Carillon", dependencies: ["CarillonReceiptStore"]),
+    .target(name: "CarillonReceiptStore"),
+    .target(name: "CarillonNotificationExtension", dependencies: ["CarillonReceiptStore"]),
     .testTarget(name: "CarillonNotificationExtensionTests", dependencies: ["CarillonNotificationExtension"]),
-    .testTarget(name: "CarillonTests", dependencies: ["Carillon"]),
+    .testTarget(name: "CarillonTests", dependencies: ["Carillon", "CarillonReceiptStore"]),
   ]
 )

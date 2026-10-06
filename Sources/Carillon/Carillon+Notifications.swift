@@ -56,6 +56,7 @@
     static func willPresent(
       userInfo: [AnyHashable: Any], title: String?, body: String?
     ) -> UNNotificationPresentationOptions {
+      engine.didReceive(userInfo: userInfo)
       let received = ReceivedNotification(userInfo: userInfo, title: title, body: body)
       let decision = onReceived?(received) ?? .show
 

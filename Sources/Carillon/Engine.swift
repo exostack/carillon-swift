@@ -417,6 +417,19 @@ final class Engine {
     return true
   }
 
+  @discardableResult
+  func didReceive(userInfo: [AnyHashable: Any], at: Date? = nil) -> Bool {
+    guard let stamp = userInfo["carillon"] as? [String: Any],
+      let id = stamp["delivery_id"] as? String, UUID(uuidString: id) != nil else { return false }
+    lock.withLock {
+      if !store.events.contains(where: { $0.type == QueuedEvent.received && $0.deliveryId == id }) {
+        store.events.append(QueuedEvent(type: QueuedEvent.received, deliveryId: id, at: at ?? clock.now))
+      }
+    }
+    startEventLoop()
+    return true
+  }
+
   var currentOnOpened: ((OpenedNotification) -> Void)? {
     lock.withLock { onOpened }
   }

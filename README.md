@@ -268,3 +268,27 @@ app's device record. Switching back registers again.
 Use separate bundle identifiers for development and production installations
 that must coexist on a phone. Changing keys does not clear your application-set
 user identity or tags; update those explicitly when the signed-in user changes.
+
+## Receipt tracking
+
+SDK 0.5.0 queues a `received` event when a notification reaches `Carillon.willPresent`.
+It also checks notifications still present in Notification Center at configuration
+and whenever the app becomes active. Opening the app directly can therefore report
+receipts without a tap. Notifications already removed cannot be recovered this way.
+A receipt does not call `onOpened` or mean that someone read the notification.
+
+To retain receipts while the app is not running, install the notification service
+extension described above and enable the same **App Groups** capability on both
+app and extension targets, for example `group.com.example.app.carillon`. Add the
+`CarillonAppGroup` string with that identifier to both targets' Info.plist files.
+Both provisioning profiles must include the group. Build and install the new binary.
+
+The extension stores the delivery ID and receipt date in the shared container before
+processing an image. The app queues these receipts at its next launch or activation,
+including notifications removed before that launch. No API key is stored in the group.
+Carillon alert payloads include `mutable-content: 1`; overriding it or sending a
+silent notification prevents this extension path. iOS does not guarantee extension
+execution, so missing receipts are not proof of failed delivery.
+
+Events persist offline and retry. The trace exposes `received_at` (observed time)
+and `received_reported_at` (server report time), which can differ after an offline period.
