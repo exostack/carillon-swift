@@ -8,7 +8,7 @@ import Foundation
 /// and notification-open callbacks. See the README for setup.
 public enum Carillon {
   /// The SDK version reported at registration.
-  public static let sdkVersion = "0.4.1"
+  public static let sdkVersion = "0.5.0"
 
   /// Default API endpoint. Override for staging or local development.
   public static let defaultEndpoint = "https://api.carillon.dev"
@@ -76,6 +76,7 @@ public enum Carillon {
       // addressing, not consent. Waiting for a prompt would make the customer's
       // base the subset of people who were asked and said yes — a measure of
       // their onboarding rather than of their reach.
+      ReceiptRecovery.start()
       Task { await requestPushToken() }
     #endif
   }
@@ -157,6 +158,12 @@ public enum Carillon {
   /// notification-center delegate belongs to another library.
   public static func didOpen(userInfo: [AnyHashable: Any]) {
     engine.didOpen(userInfo: userInfo)
+  }
+
+  /// Records receipt without changing presentation or invoking notification handlers.
+  /// Use when the notification-center delegate belongs to another library.
+  public static func didReceive(userInfo: [AnyHashable: Any]) {
+    engine.didReceive(userInfo: userInfo)
   }
 
   /// The last confirmed registration ID, or nil before registration succeeds.

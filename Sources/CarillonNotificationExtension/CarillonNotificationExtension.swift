@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import CarillonReceiptStore
 
 /// Retain the returned helper in your UNNotificationServiceExtension instance.
 public final class CarillonNotificationExtension: NSObject, URLSessionDataDelegate {
@@ -18,6 +19,11 @@ public final class CarillonNotificationExtension: NSObject, URLSessionDataDelega
     withContentHandler completion: @escaping (UNNotificationContent) -> Void
   ) -> CarillonNotificationExtension {
     let helper = CarillonNotificationExtension(content: request.content, completion: completion)
+    if let group = Bundle.main.object(forInfoDictionaryKey: "CarillonAppGroup") as? String,
+      let stamp = request.content.userInfo["carillon"] as? [String: Any],
+      let id = stamp["delivery_id"] as? String {
+      ReceiptStore(appGroup: group)?.record(id: id, at: Date())
+    }
     helper.start(configuration: .ephemeral)
     return helper
   }

@@ -48,6 +48,17 @@ final class NotificationTests: XCTestCase {
     XCTAssertEqual(Carillon.willPresent(userInfo: stamped), [])
   }
 
+  func testDidReceiveQueuesReceiptWithoutCallingPresentationOrOpenHandlers() {
+    Carillon.onReceived = { _ in XCTFail("Receipt must not control presentation"); return .show }
+    Carillon.onOpened = { _ in XCTFail("Receipt must not report an open") }
+
+    Carillon.didReceive(userInfo: stamped)
+    Carillon.didReceive(userInfo: stamped)
+    Carillon.didReceive(userInfo: ["aps": ["alert": "Hello"]])
+
+    XCTAssertEqual(engine.debugInfo().queuedEvents, 1)
+  }
+
   func testWithoutAHandlerTheSystemPresentsEverything() {
     XCTAssertEqual(Carillon.willPresent(userInfo: stamped), [.banner, .list, .sound, .badge])
   }

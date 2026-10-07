@@ -15,6 +15,34 @@ final class EventTests: XCTestCase {
     ]
   }
 
+  func testReceiptSurvivesRestartAndDoesNotBecomeAnOpen() async {
+    let store = MemoryStore()
+    let first = makeEngine(store: store, key: "")
+    let at = Date(timeIntervalSince1970: 1_790_000_000)
+    first.setOnOpened { _ in XCTFail("Receiving is not opening") }
+    XCTAssertTrue(first.didReceive(userInfo: payload(deliveryId), at: at))
+    XCTAssertTrue(first.didReceive(userInfo: payload(deliveryId), at: at.addingTimeInterval(10)))
+    XCTAssertFalse(first.didReceive(userInfo: ["carillon": ["delivery_id": "invalid"]]))
+    await first.settle()
+    XCTAssertEqual(store.events.count, 1)
+    XCTAssertEqual(store.events.first?.type, "received")
+    XCTAssertEqual(store.events.first?.at, at)
+
+    let transport = FakeTransport([.failure("offline"), .response(status: 202, body: Data())])
+    let restored = makeEngine(transport: transport, store: store)
+    restored.startEventLoop()
+    await restored.settle()
+    XCTAssertEqual(transport.requests.count, 2)
+    let event = (transport.bodies.last?["events"] as? [[String: Any]])?.first
+    XCTAssertEqual(event?["type"] as? String, "received")
+    XCTAssertEqual(event?["at"] as? String, ISO8601.string(from: at))
+    XCTAssertTrue(store.events.isEmpty)
+    restored.didOpen(userInfo: payload(deliveryId))
+    await restored.settle()
+    let opened = (transport.bodies.last?["events"] as? [[String: Any]])?.first
+    XCTAssertEqual(opened?["type"] as? String, "opened")
+  }
+
   func testQueuesAndReportsAnOpen() async {
     let transport = FakeTransport()
     let clock = FakeClock()

@@ -20,16 +20,14 @@ protocol Store: AnyObject {
   var events: [QueuedEvent] { get set }
 }
 
-/// One open, waiting to be reported.
+/// One receipt or open, waiting to be reported.
 struct QueuedEvent: Codable, Equatable {
-  /// `opened` is the only type this version produces. It is stored rather than
-  /// implied so that the queue a later version inherits from an earlier install
-  /// still says what each entry was.
   let type: String
   let deliveryId: String
   let at: Date
 
   static let opened = "opened"
+  static let received = "received"
 
   func json() -> [String: Any] {
     ["type": type, "delivery_id": deliveryId, "at": ISO8601.string(from: at)]
